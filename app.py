@@ -70,7 +70,7 @@ def _params_from_json(data):
     p.salinity_delta = float(data.get("salinity_delta", 0.0))
     p.seal_hunt = float(data.get("seal_hunt", 0.0))
     p.bird_hunt = float(data.get("bird_hunt", 0.0))
-    p.noise = float(data.get("noise", 0.0))
+    p.noise = float(data.get("noise", 0.7))
     p.noise_seed = int(data.get("noise_seed", 0))
     fishing = data.get("fishing") or {}
     for art in ("sill", "skarpsill", "spigg", "abborre", "gadda", "torsk", "lax"):

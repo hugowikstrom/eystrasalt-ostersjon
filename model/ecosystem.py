@@ -53,7 +53,7 @@ class EcoParams:
     salinity_delta: float = 0.0    # klimat-utsötning (negativ = sötare hav)
     seal_hunt: float = 0.0         # extra säljakt (0 = fredad)
     bird_hunt: float = 0.0         # skyddsjakt/störning på sjöfågel/skarv (0 = fredad)
-    noise: float = 0.0             # mellanårsvariation (väderbrus), 0 = av
+    noise: float = 0.7             # mellanårsvariation (väderbrus) — realistisk baslinje
     noise_seed: int = 0            # slumpfrö för bruset (samma frö = samma förlopp)
     fishing: dict = field(default_factory=lambda: dict(
         sill=0.2, skarpsill=0.3, spigg=0.05, abborre=0.1, gadda=0.1,

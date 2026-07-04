@@ -148,8 +148,10 @@ def _run_draw(args):
         _set(u["key"], base * factor)
         sample[u["key"]] = factor         # spara faktorn för känslighetsanalysen
     try:
-        # Kör in havet EN gång (dagens förvaltning) — delas av alla strategier
-        base_p = EcoParams()
+        # Kör in havet EN gång (dagens förvaltning) — delas av alla strategier.
+        # Varje lottning får sitt eget väderår (noise_seed) → bandet fångar även
+        # mellanårsvariationen; alla strategier i samma lottning delar väder.
+        base_p = EcoParams(noise_seed=draw_i)
         base_p.temp_delta = cfg["temp_delta"]; base_p.salinity_delta = cfg["salinity_delta"]
         _, y_spin = _solve(default_initial_state(), base_p, SPINUP_YEARS, 4)
         start = y_spin[:, -1]
@@ -159,6 +161,7 @@ def _run_draw(args):
         health = {}
         for skey in STRATEGIES:
             p = _strategy_params(skey, cfg)
+            p.noise_seed = draw_i          # samma väder för alla strategier i lottningen
             t, Y = _solve(start, p, MAX_YEARS, n_out)
             res = _res_from(t, Y)
             snaps[skey] = {h: ECON.snapshot_from_res(res, h) for h in HORIZONS}

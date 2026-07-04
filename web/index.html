@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Eystrasalt — Östersjöns ekosystem</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <div class="head-top">
+      <h1 data-i18n="app_title">🌊 Eystrasalt — Östersjöns ekosystem</h1>
+      <label class="lang-pick"><span data-i18n="language">Språk</span>
+        <select id="lang"></select>
+      </label>
+    </div>
+    <p class="tagline" data-i18n="tagline">Simulera hela kretsloppet från näringssalter till säl, jämför strategier under osäkerhet och se vad ett friskare hav är värt.</p>
+    <nav class="tabs" id="tabs">
+      <button class="tab active" data-tab="sim" data-i18n="tab_sim">Simulering</button>
+      <button class="tab" data-tab="mc" data-i18n="tab_mc">Strategier &amp; Monte Carlo</button>
+      <button class="tab" data-tab="eco" data-i18n="tab_eco">Ekonomi</button>
+      <button class="tab" data-tab="pyramid" data-i18n="tab_pyramid">Näringspyramid &amp; uttag</button>
+      <button class="tab" data-tab="verify" data-i18n="tab_verify">Verifiering</button>
+      <button class="tab" data-tab="reports" data-i18n="tab_reports">Rapporter &amp; forskning</button>
+      <button class="tab" data-tab="ideas" data-i18n="tab_ideas">Idélåda</button>
+      <button class="tab" data-tab="export" data-i18n="tab_export">Exportera</button>
+    </nav>
+  </header>
+
+  <!-- ============ FLIK: SIMULERING ============ -->
+  <main class="view active" id="view-sim">
+    <aside class="panel controls">
+      <h2><span data-i18n="scenario">Scenario</span> <span class="help" data-k="scenario"></span></h2>
+      <select id="scenario"></select>
+      <p id="scenario-desc" class="hint"></p>
+
+      <h2 data-i18n="stress">Stress-reglage</h2>
+      <div class="slider">
+        <label><span data-i18n="warming">Klimatuppvärmning</span> <span class="val" id="v-temp">0</span> °C <span class="help" data-k="temp_delta"></span></label>
+        <input type="range" id="temp_delta" min="-2" max="8" step="0.5" value="0">
+      </div>
+      <div class="slider">
+        <label><span data-i18n="nutrient">Näringsbelastning</span> <span class="val" id="v-nut">1.0</span>× <span class="help" data-k="nutrient_load"></span></label>
+        <input type="range" id="nutrient_load" min="0" max="3" step="0.1" value="1">
+      </div>
+      <div class="slider">
+        <label><span data-i18n="salinity">Salthaltsändring</span> <span class="val" id="v-sal">0</span> PSU <span class="help" data-k="salinity_delta"></span></label>
+        <input type="range" id="salinity_delta" min="-4" max="4" step="0.5" value="0">
+      </div>
+      <div class="slider">
+        <label><span data-i18n="seal_hunt">Säljakt</span> <span class="val" id="v-seal">0</span> <span class="help" data-k="seal_hunt"></span></label>
+        <input type="range" id="seal_hunt" min="0" max="4" step="0.2" value="0">
+      </div>
+      <div class="slider">
+        <label><span data-i18n="bird_hunt">Skarv-/fågeljakt</span> <span class="val" id="v-bird">0</span> <span class="help" data-k="bird_hunt"></span></label>
+        <input type="range" id="bird_hunt" min="0" max="4" step="0.2" value="0">
+      </div>
+      <div class="slider">
+        <label><span data-i18n="noise">Mellanårsvariation (brus)</span> <span class="val" id="v-noise">0</span> <span class="help" data-k="noise"></span></label>
+        <input type="range" id="noise" min="0" max="2" step="0.1" value="0">
+      </div>
+
+      <h3 data-i18n="fishing_pressure">Fisketryck (fångst)</h3>
+      <div class="slider">
+        <label>Sill <span class="val" id="v-f-sill">0.2</span> <span class="help" data-k="f-sill"></span></label>
+        <input type="range" id="f-sill" min="0" max="2" step="0.05" value="0.2">
+      </div>
+      <div class="slider">
+        <label>Skarpsill <span class="val" id="v-f-skarpsill">0.3</span> <span class="help" data-k="f-skarpsill"></span></label>
+        <input type="range" id="f-skarpsill" min="0" max="2" step="0.05" value="0.3">
+      </div>
+      <div class="slider">
+        <label>Spigg <span class="val" id="v-f-spigg">0.05</span> <span class="help" data-k="f-spigg"></span></label>
+        <input type="range" id="f-spigg" min="0" max="2" step="0.05" value="0.05">
+      </div>
+      <div class="slider">
+        <label>Abborre <span class="val" id="v-f-abborre">0.1</span> <span class="help" data-k="f-abborre"></span></label>
+        <input type="range" id="f-abborre" min="0" max="2" step="0.05" value="0.1">
+      </div>
+      <div class="slider">
+        <label>Gädda <span class="val" id="v-f-gadda">0.1</span> <span class="help" data-k="f-gadda"></span></label>
+        <input type="range" id="f-gadda" min="0" max="2" step="0.05" value="0.1">
+      </div>
+      <div class="slider">
+        <label>Torsk <span class="val" id="v-f-torsk">0.2</span> <span class="help" data-k="f-torsk"></span></label>
+        <input type="range" id="f-torsk" min="0" max="2" step="0.05" value="0.2">
+      </div>
+      <div class="slider">
+        <label>Lax <span class="val" id="v-f-lax">0.15</span> <span class="help" data-k="f-lax"></span></label>
+        <input type="range" id="f-lax" min="0" max="2" step="0.05" value="0.15">
+      </div>
+
+      <div class="slider">
+        <label><span data-i18n="years">Antal år</span> <span class="val" id="v-years">30</span> <span class="help" data-k="years"></span></label>
+        <input type="range" id="years" min="5" max="100" step="5" value="30">
+      </div>
+
+      <button id="run" class="primary" data-i18n="run">▶ Kör simulering</button>
+
+      <h3><span data-i18n="save_load">Spara / ladda</span> <span class="help" data-k="saved"></span></h3>
+      <input id="save-name" type="text" data-i18n-ph="save_name_ph" placeholder="Namn på körningen">
+      <div class="row2">
+        <button id="save-server" data-i18n="save_server">Spara på server</button>
+        <button id="save-local" data-i18n="save_local">Spara lokalt</button>
+      </div>
+      <div id="saved-list"></div>
+
+      <h2 data-i18n="ai_scenario">🤖 AI-scenario</h2>
+      <p class="hint" data-i18n="ai_scenario_hint">Beskriv med egna ord — AI:n ställer in reglagen.</p>
+      <textarea id="ai-text" rows="3" placeholder="t.ex. Värm havet 3 grader och stoppa allt torskfiske i 40 år"></textarea>
+      <button id="ai-run" data-i18n="interpret_run">Tolka &amp; kör</button>
+      <p id="ai-motiv" class="hint"></p>
+    </aside>
+
+    <section class="panel map-area">
+      <div class="map-head">
+        <h2><span data-i18n="map">Karta</span> <span class="help" data-k="layer"></span></h2>
+        <select id="layer"></select>
+      </div>
+      <svg id="map" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet"></svg>
+
+      <div class="timeline">
+        <button id="play">▶</button>
+        <input type="range" id="time" min="0" max="0" step="1" value="0">
+        <span id="time-label" class="time-label">år 0</span>
+      </div>
+      <div id="legend" class="legend"></div>
+      <div id="status" class="status">Kör en simulering för att börja…</div>
+
+      <h3><span data-i18n="health_title">Ekosystemets hälsa</span> <span class="help" data-k="health"></span></h3>
+      <div class="chart" id="chart-health"></div>
+    </section>
+
+    <section class="panel charts-area">
+      <div class="col-head">
+        <h2><span data-i18n="zone">Zon</span>: <span id="zone-name">—</span></h2>
+        <span class="hint" data-i18n="click_zone">Klicka på en zon i kartan</span>
+      </div>
+
+      <div class="watercolumn">
+        <h3 data-i18n="watercolumn">Vattenpelare (syre, % mättnad)</h3>
+        <div class="wc" id="watercolumn"></div>
+        <div class="wc-labels"><span>Yta</span><span>Botten</span></div>
+      </div>
+
+      <h3 data-i18n="charts_choose">Grafer — välj vad som visas</h3>
+      <div class="presets">
+        <button data-preset="plankton" data-i18n="preset_plankton">Plankton</button>
+        <button data-preset="fisk" data-i18n="preset_fish">Fisk</button>
+        <button data-preset="botten" data-i18n="preset_bottom">Botten</button>
+        <button data-preset="syre" data-i18n="preset_oxygen">Syre</button>
+        <button data-preset="allt" data-i18n="preset_all">Allt</button>
+        <label class="norm"><input type="checkbox" id="normalize"> <span data-i18n="normalize">Normalisera (0–100 %)</span></label>
+      </div>
+      <div class="chips" id="series-chips"></div>
+      <div class="chart" id="chart-main"></div>
+      <div class="unit-label" id="unit-main"></div>
+
+      <h2 data-i18n="ecolog_interpret">🤖 Ekologens tolkning</h2>
+      <button id="explain" data-i18n="explain_btn">Förklara resultatet</button>
+      <p id="ai-explain" class="explain"></p>
+    </section>
+  </main>
+
+  <!-- ============ FLIK: MONTE CARLO ============ -->
+  <section class="view" id="view-mc">
+    <div class="panel wide">
+      <h2><span data-i18n="mc_title">Vilken strategi ger bäst återhämtning?</span> <span class="help" data-k="mc_draws"></span></h2>
+      <p class="hint" data-i18n="mc_hint">Kör simuleringen många gånger och lottar de osäkra naturparametrarna. Alla strategier testas i samma lottade värld. Osäkerheten visas som band (p10–p90).</p>
+      <div class="mc-controls">
+        <div class="slider inline">
+          <label><span data-i18n="mc_draws">Lottningar</span> <span class="val" id="v-mc-draws">16</span></label>
+          <input type="range" id="mc-draws" min="6" max="40" step="2" value="16">
+        </div>
+        <span class="hint" data-i18n="mc_from_sliders">Klimat/övergödning tas från reglagen i Simulering-fliken.</span>
+        <button id="mc-run" class="primary" data-i18n="mc_run">▶ Kör Monte Carlo</button>
+      </div>
+      <div id="mc-status" class="status">Ej körd ännu.</div>
+    </div>
+
+    <div class="panel wide" id="mc-results" style="display:none">
+      <h2 data-i18n="mc_results_title">Återhämtning per strategi (hälsoindex 0–100)</h2>
+      <div id="mc-best" class="best"></div>
+      <div class="table-wrap"><table id="mc-table"></table></div>
+      <h3><span data-i18n="research_title">Var behövs mer forskning? (känslighetsanalys)</span> <span class="help" data-k="research"></span></h3>
+      <p class="hint" data-i18n="research_hint">Hög stapel = den osäkra parametern styr utfallet mest → där är kunskapsluckan dyrast för besluten.</p>
+      <div id="mc-sensitivity"></div>
+      <button id="research-run" data-i18n="research_run">🤖 Låt AI:n föreslå forskning</button>
+      <p id="research-out" class="explain"></p>
+    </div>
+  </section>
+
+  <!-- ============ FLIK: EKONOMI ============ -->
+  <section class="view" id="view-eco">
+    <div class="panel wide">
+      <h2><span data-i18n="eco_title">Nationalekonomiskt värde per land</span> <span class="help" data-k="economics"></span></h2>
+      <p class="hint" data-i18n="eco_hint">Årsvärde i miljoner euro: fiske + ekosystemtjänster. Förbättringen är strategins värde minus baslinjens. Kräver en Monte Carlo-körning.</p>
+      <div class="eco-controls">
+        <label><span data-i18n="strategy">Strategi</span>: <select id="eco-strategy"></select></label>
+        <label><span data-i18n="horizon">Årshorisont</span>: <select id="eco-horizon"></select></label>
+      </div>
+      <div id="eco-status" class="status">Kör Monte Carlo (fliken bredvid) för att fylla i.</div>
+      <div class="table-wrap"><table id="eco-table"></table></div>
+    </div>
+  </section>
+
+  <!-- ============ FLIK: PYRAMID & UTTAG ============ -->
+  <section class="view" id="view-pyramid">
+    <div class="panel wide">
+      <h2><span data-i18n="pyramid_title">Näringspyramid — hela kretsloppet</span> <span class="help" data-k="pyramid"></span></h2>
+      <p class="hint" data-i18n="pyramid_hint">Bredden visar biomassan på varje nivå, från näringssalter längst ned till toppredatorer. Allt som dör blir detritus/kadaver som bryts ned till näring igen — kretsloppet sluts.</p>
+      <div id="pyramid"></div>
+    </div>
+    <div class="panel wide">
+      <h2><span data-i18n="uttak_title">Uttag ur havet över tid</span> <span class="help" data-k="uttak"></span></h2>
+      <p class="hint" data-i18n="uttak_hint">Vem tar ut biomassa ur havet: fiske (människa), säl, skarv/sjöfågel — och hur mycket som återvinns via nedbrytning.</p>
+      <div id="uttak-legend" class="legend"></div>
+      <div class="chart" id="chart-uttak"></div>
+      <h3 data-i18n="trofi_over_time">Biomassa per trofinivå över tid</h3>
+      <div id="trofi-legend" class="legend"></div>
+      <div class="chart" id="chart-trofi"></div>
+    </div>
+  </section>
+
+  <!-- ============ FLIK: VERIFIERING ============ -->
+  <section class="view" id="view-verify">
+    <div class="panel wide">
+      <h2><span data-i18n="verify_title">Verifiering mot litteraturen</span> <span class="help" data-k="verification"></span></h2>
+      <p class="hint" data-i18n="verify_hint">Kontrollerar att modellen reproducerar kända Östersjö-samband i rätt riktning, med källhänvisning.</p>
+      <button id="verify-run" class="primary" data-i18n="verify_run">▶ Kör verifiering</button>
+      <div id="verify-status" class="status"></div>
+      <div id="verify-list"></div>
+    </div>
+  </section>
+
+  <!-- ============ FLIK: RAPPORTER ============ -->
+  <section class="view" id="view-reports">
+    <div class="panel wide">
+      <h2><span data-i18n="reports_title">Rapporter &amp; underlag</span> <span class="help" data-k="reports"></span></h2>
+      <p class="hint" data-i18n="reports_hint">Klistra in text ur rapporter/studier som AI:n ska väga in när den tolkar scenarier, förklarar resultat och föreslår forskning.</p>
+      <input id="rep-title" type="text" data-i18n-ph="rep_title_ph" placeholder="Titel (t.ex. HELCOM 2023 – Eutrophication)">
+      <textarea id="rep-text" rows="6" data-i18n-ph="rep_text_ph" placeholder="Klistra in relevant text/utdrag här…"></textarea>
+      <button id="rep-add" class="primary" data-i18n="rep_add">Lägg till rapport</button>
+      <button id="suggest-reports" data-i18n="suggest_reports_btn">🤖 Vilka rapporter borde läggas in?</button>
+      <div id="rep-status" class="hint"></div>
+      <p id="suggest-out" class="explain"></p>
+      <h3 data-i18n="reports_added">Inlagda rapporter</h3>
+      <div id="rep-list"></div>
+    </div>
+  </section>
+
+  <!-- ============ FLIK: IDÉLÅDA ============ -->
+  <section class="view" id="view-ideas">
+    <div class="panel wide">
+      <h2><span data-i18n="ideas_title">Idélåda — alla kan bidra</span> <span class="help" data-k="ideas"></span></h2>
+      <p class="hint" data-i18n="ideas_hint">Har du en idé, en förbättring eller kunskap om Östersjön? Dela den här.</p>
+      <input id="idea-name" type="text" data-i18n-ph="idea_name_ph" placeholder="Ditt namn (valfritt)">
+      <textarea id="idea-text" rows="4" data-i18n-ph="idea_text_ph" placeholder="Din idé eller ditt förslag…"></textarea>
+      <button id="idea-add" class="primary" data-i18n="idea_add">Skicka idé</button>
+      <div id="idea-status" class="hint"></div>
+      <h3 data-i18n="ideas_list">Inskickade idéer</h3>
+      <div id="idea-list"></div>
+    </div>
+  </section>
+
+  <!-- ============ FLIK: EXPORT ============ -->
+  <section class="view" id="view-export">
+    <div class="panel wide">
+      <h2><span data-i18n="export_title">Exportera simuleringen</span> <span class="help" data-k="export"></span></h2>
+      <p class="hint" data-i18n="export_hint">Skapa ett dokument av senaste körningen. Välj format, språk och mottagare.</p>
+      <div class="export-grid">
+        <label><span data-i18n="export_format">Format</span>
+          <select id="exp-format">
+            <option value="sida" data-i18n="format_page">Enkel sida (HTML)</option>
+            <option value="pptx" data-i18n="format_pptx">PowerPoint (.pptx)</option>
+            <option value="rapport" data-i18n="format_report">Rapport (Word .docx)</option>
+          </select>
+        </label>
+        <label><span data-i18n="language_doc">Dokumentets språk</span>
+          <select id="exp-lang"></select>
+        </label>
+        <label><span data-i18n="recipient">Mottagare</span>
+          <input id="exp-recipient" type="text" data-i18n-ph="recipient_ph" placeholder="Namn på mottagaren (valfritt)">
+        </label>
+        <label class="chk"><input type="checkbox" id="exp-ai"> <span data-i18n="export_ai_text">Låt AI:n skriva rapporttext</span></label>
+      </div>
+      <div class="row2">
+        <button id="exp-run" class="primary" data-i18n="export_btn">⬇ Skapa &amp; ladda ned</button>
+        <button id="exp-mail" data-i18n="email_btn">✉ Öppna e-post till mottagaren</button>
+      </div>
+      <div id="exp-status" class="status"></div>
+    </div>
+  </section>
+
+  <script src="app.js"></script>
+</body>
+</html>

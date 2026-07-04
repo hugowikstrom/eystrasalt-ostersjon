@@ -1,0 +1,8 @@
+flask
+flask-cors
+python-dotenv
+numpy
+scipy
+anthropic
+python-pptx
+python-docx

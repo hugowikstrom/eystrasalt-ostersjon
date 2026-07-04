@@ -1,0 +1,30 @@
+{
+  "_kommentar": "Litteraturförankring för modellens parametrar. De faktiska värdena finns i model/species.py och model/zones.py (Python är källan). Detta är en referenskarta över var siffrorna kommer ifrån och vilka mekanismer de representerar. Värdena är rimliga riktvärden, inte exakta mätdata.",
+
+  "zoner": {
+    "salthaltsgradient": "Nästan sött i Bottenviken (~3 PSU) till marint vid de danska sunden (~18 PSU). Källa: HELCOM/SMHI oceanografiska medelvärden.",
+    "djupa_bassänger": "Egentliga Östersjön (t.ex. Gotlandsdjupet) har djupa bassänger med permanent språngskikt (halinklin) och syrefria bottnar."
+  },
+
+  "näringsväv": {
+    "NPZD": "Nutrients–Phytoplankton–Zooplankton–Detritus är standarduppställningen för planktondynamik (Fasham m.fl.).",
+    "cyanobakterier": "Kvävefixerande sommarblomningar (Nodularia m.fl.) gynnas av varmt, skiktat och fosforrikt vatten. Äts ogärna (toxiska).",
+    "funktionellt_svar": "Holling type II — predatorns ätande mättas vid rikligt byte."
+  },
+
+  "torsk": {
+    "saltberoende_lek": "Torskägg behöver flyta i den salta 'reproduktionsvolymen' (~>11 PSU). Leken sker i djupvattnet i Egentliga Östersjöns bassänger. Utsötning krymper reproduktionsvolymen.",
+    "referens": "MacKenzie m.fl.; Köster m.fl. om torskens reproduktionsvolym."
+  },
+
+  "regimskifte_spigg": {
+    "wasp_waist": "Efter torskkollapsen på 1980–90-talen ökade skarpsill och spigg. Spiggen äter torskens och abborrens yngel och kan låsa fast ett 'spigghav' som är trögt att vända.",
+    "referens": "Eklöf m.fl. 2020; Bergström m.fl. om storspiggens expansion i Östersjön."
+  },
+
+  "syre": {
+    "vertikal_skiktning": "Ytvattnet hålls nära syremättnad av atmosfärsutbyte; bottenvattnet under språngskiktet syresätts bara av svag vertikal blandning och blir syrefritt när nedbrytningen av organiskt material överstiger tillförseln.",
+    "intern_belastning": "Syrefria bottnar läcker fosfor från sedimentet (intern belastning), vilket göder nya blomningar — en ond cirkel som gör övergödningen svår att vända.",
+    "klimat": "Varmare ytvatten ger starkare skiktning → sämre bottensyre. Källa: Carstensen m.fl. om Östersjöns döda bottnar."
+  }
+}

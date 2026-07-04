@@ -1,0 +1,22 @@
+# Hemligheter — får ALDRIG checkas in
+.env
+.env.*
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Utdata och körtidsdata
+out/
+data/reports/
+data/saved/
+data/ideas/
+data/i18n/*.json
+!data/i18n/sv.json
+
+# OS/redigerare
+.DS_Store
+*.swp

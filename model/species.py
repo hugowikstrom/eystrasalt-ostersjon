@@ -84,6 +84,7 @@ G_ZOO = 22.0        # betningshastighet på plankton
 K_PREY_ZOO = 3.0    # halvmättnad (Holling II)
 ASSIM_ZOO = 0.6     # assimilationseffektivitet
 M_ZOO = 4.0         # dödlighet + respiration
+QUAD_ZOO = 0.05     # täthetsberoende dödlighet (closure) — dämpar boom-bust-toppar
 
 # --- Bottenfauna (bentos: blåmussla, östersjömussla, märlkräftor) ------------
 # Filtrerar växtplankton och detritus ur vattnet (viktig näringsrening!) och är

@@ -247,7 +247,7 @@ def _rhs(t, y, p: EcoParams, pre):
     m_bentos = S.BENTOS_MORT * bentos + S.BENTOS_BRAKE * bentos ** 2 + S.BENTOS_HYP * hyp_bottom * bentos
     m_fagel = S.FISH["fagel"]["mort"] * (1 + p.bird_hunt) * fagel + 0.08 * fagel ** 2
     m_sal = S.FISH["sal"]["mort"] * (1 + p.seal_hunt) * sal_b + 0.05 * sal_b ** 2
-    m_zoo = S.M_ZOO * Z + 0.05 * Z ** 2 + HYP_MORT_ZOO * hyp_surface * Z
+    m_zoo = S.M_ZOO * Z + S.QUAD_ZOO * Z ** 2 + HYP_MORT_ZOO * hyp_surface * Z
 
     # --- Näring, detritus, syre ---
     uptake_N = gP + gCY * (1 - S.CYANO_FIX)

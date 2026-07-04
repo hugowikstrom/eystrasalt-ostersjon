@@ -53,7 +53,7 @@
   "short_term": "Kort sikt",
   "long_term": "Lång sikt",
   "vs_today": "% av idag",
-  "biomass_hint": "Årsmedelvärden vid markörens år. Kort sikt ≈ 5 år, lång sikt = hela förloppet, jämfört med idag (100 % = som idag).",
+  "biomass_hint": "3-årsmedelvärden (dämpar säsongs- och flerårssvängningar). Kort sikt ≈ 5 år, lång sikt = hela förloppet, jämfört med idag (100 % = som idag).",
   "watercolumn": "Vattenpelare (syre, % mättnad)",
   "charts_choose": "Grafer — välj vad som visas",
   "preset_plankton": "Plankton",

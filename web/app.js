@@ -371,11 +371,13 @@ function trendArrow(from, to) {
   return `<span class="tr-flat">→ ${txt}</span>`;
 }
 
-// Årsmedel av en serie kring ett givet år (dämpar säsongssvängningen)
+// Medelvärde av en serie i ett 3-årsfönster kring ett givet år. Brett fönster
+// eftersom vissa arter (särskilt djurplankton) svänger kraftigt med flerårig
+// takt — ett smalt fönster ger annars orimliga jämförelsetal (aliasing).
 function annMean(arr, t, year) {
   let sum = 0, n = 0;
   for (let i = 0; i < t.length; i++) {
-    if (t[i] >= year - 0.5 && t[i] <= year + 0.5) { sum += arr[i]; n++; }
+    if (t[i] >= year - 1.5 && t[i] <= year + 1.5) { sum += arr[i]; n++; }
   }
   if (n) return sum / n;
   let bi = 0, bd = Infinity;                     // fallback: närmaste punkt
@@ -393,10 +395,10 @@ function drawBiomassTable() {
   const yNow = t[ti];
   const yShort = Math.min(5, yEnd);              // "kort sikt" ≈ 5 år
   const M = (c, y) => Math.max(0, annMean(s[c], t, y));
-  // "Idag" = medel över hela första året (annars stör spinup/säsong)
+  // "Idag" = medel över första 3 åren (dämpar spinup/säsong/flerårstakt)
   const M0 = (c) => {
     let sum = 0, n = 0;
-    for (let i = 0; i < t.length; i++) { if (t[i] <= 1.0) { sum += s[c][i]; n++; } }
+    for (let i = 0; i < t.length; i++) { if (t[i] <= 3.0) { sum += s[c][i]; n++; } }
     return n ? Math.max(0, sum / n) : M(c, 0);
   };
 
@@ -435,7 +437,7 @@ function drawBiomassTable() {
       <th>${T("long_term","Lång sikt")}</th>
       <th>${T("vs_today","% av idag")}</th>
     </tr></thead><tbody>${rows}</tbody></table>
-    <div class="hint">${T("biomass_hint","Årsmedelvärden vid markörens år. Kort sikt ≈ 5 år, lång sikt = hela förloppet, jämfört med idag (100 % = som idag).")}</div>`;
+    <div class="hint">${T("biomass_hint","3-årsmedelvärden (dämpar säsongs- och flerårssvängningar). Kort sikt ≈ 5 år, lång sikt = hela förloppet, jämfört med idag (100 % = som idag).")}</div>`;
 }
 
 function drawAllCharts() { drawMainChart(); drawHealthChart(); drawBiomassTable(); drawPyramid(); drawUttak(); drawTrofi(); }

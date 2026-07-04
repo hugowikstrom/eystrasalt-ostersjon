@@ -30,27 +30,35 @@ def _next_id():
     return (max(ids) + 1) if ids else 1
 
 
-def save(namn, params, summary=None):
+def save(namn, params, summary=None, user=""):
     """Sparar en parameteruppsättning + valfri sammanfattning. Returnerar metadata."""
     _ensure()
     namn = (namn or "Namnlös körning").strip()[:120]
+    user = (user or "").strip()[:60]
     sid = _next_id()
-    obj = {"id": sid, "namn": namn, "params": params or {}, "summary": summary or {},
-           "sparad": datetime.now().strftime("%Y-%m-%d %H:%M")}
+    obj = {"id": sid, "namn": namn, "user": user, "params": params or {},
+           "summary": summary or {}, "sparad": datetime.now().strftime("%Y-%m-%d %H:%M")}
     with open(_path(sid), "w", encoding="utf-8") as f:
         json.dump(obj, f, ensure_ascii=False)
-    return {"id": sid, "namn": namn, "sparad": obj["sparad"]}
+    return {"id": sid, "namn": namn, "user": user, "sparad": obj["sparad"]}
 
 
-def list_saved():
-    """Alla sparade uppsättningar (med parametrar, utan tung data)."""
+def list_saved(user=None):
+    """
+    Sparade uppsättningar. Ges 'user' returneras bara den användarens körningar
+    (enkel, lösenordslös profil). Utan 'user' returneras alla.
+    """
     _ensure()
+    want = (user or "").strip()
     out = []
     for p in sorted(glob.glob(os.path.join(SAVED_DIR, "*.json"))):
         with open(p, encoding="utf-8") as f:
             o = json.load(f)
-        out.append({"id": o["id"], "namn": o["namn"], "sparad": o.get("sparad", ""),
-                    "params": o.get("params", {}), "summary": o.get("summary", {})})
+        if want and (o.get("user", "") != want):
+            continue
+        out.append({"id": o["id"], "namn": o["namn"], "user": o.get("user", ""),
+                    "sparad": o.get("sparad", ""), "params": o.get("params", {}),
+                    "summary": o.get("summary", {})})
     return out
 
 

@@ -10,6 +10,7 @@ let selectedZone = "egentliga";
 let selectedSeries = new Set(["sill", "torsk", "abborre", "gadda"]);
 let playing = false;
 let rafId = null;
+let currentUser = localStorage.getItem("eystra_user") || "";
 
 const ADJ = [
   ["bottenviken","bottenhavet"],["bottenhavet","egentliga"],
@@ -511,7 +512,7 @@ function currentSummary() {
 async function saveServer() {
   const namn = $("save-name").value.trim() || "Körning";
   await fetch("/api/saved", { method:"POST", headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({ namn, params: readParams(), summary: currentSummary() }) });
+    body: JSON.stringify({ namn, user: currentUser, params: readParams(), summary: currentSummary() }) });
   loadSavedList();
 }
 function saveLocal() {
@@ -523,7 +524,8 @@ function saveLocal() {
 }
 async function loadSavedList() {
   let server = [];
-  try { server = (await (await fetch("/api/saved")).json()).sparade || []; } catch(e){}
+  const q = currentUser ? "?user=" + encodeURIComponent(currentUser) : "";
+  try { server = (await (await fetch("/api/saved" + q)).json()).sparade || []; } catch(e){}
   const local = JSON.parse(localStorage.getItem("eystra_saved") || "[]");
   const html = [];
   server.forEach(s => html.push(rowSaved(s.namn + " · server", s.params, "srv", s.id)));
@@ -837,6 +839,71 @@ function openMail() {
   window.location.href = `mailto:${to}?subject=${subj}&body=${body}`;
 }
 
+// ---- Dela webappen (länk / sociala medier / e-post) ----
+function shareUrl() {
+  // Dela nuvarande scenario: koda reglagen i ?s= så mottagaren öppnar samma läge
+  let base = location.origin + location.pathname;
+  try {
+    const s = btoa(unescape(encodeURIComponent(JSON.stringify(readParams()))));
+    return base + "?s=" + s;
+  } catch (e) { return base; }
+}
+function shareText() {
+  const hn = DEF && DEF.dagens_halsa ? DEF.dagens_halsa.index : "";
+  return `Eystrasalt — en öppen digital tvilling för Östersjön. Kör dina egna simuleringar av havets framtid! Dagens hälsoindex: ${hn}/100.`;
+}
+function doShare(kind) {
+  const url = shareUrl(), u = encodeURIComponent(url), t = encodeURIComponent(shareText());
+  let win = null;
+  if (kind === "copy") {
+    navigator.clipboard && navigator.clipboard.writeText(url)
+      .then(() => $("share-copied").textContent = T("copied","Länk kopierad!"))
+      .catch(() => $("share-copied").textContent = url);
+    return;
+  }
+  if (kind === "native") {
+    if (navigator.share) navigator.share({ title: "Eystrasalt", text: shareText(), url });
+    else $("share-copied").textContent = T("share_native_unsupported","Enhetsdelning stöds ej — kopiera länken istället.");
+    return;
+  }
+  if (kind === "email") win = `mailto:?subject=${encodeURIComponent("Eystrasalt — Östersjön")}&body=${t}%0A%0A${u}`;
+  if (kind === "facebook") win = `https://www.facebook.com/sharer/sharer.php?u=${u}`;
+  if (kind === "x") win = `https://twitter.com/intent/tweet?url=${u}&text=${t}`;
+  if (kind === "linkedin") win = `https://www.linkedin.com/sharing/share-offsite/?url=${u}`;
+  if (kind === "whatsapp") win = `https://wa.me/?text=${t}%20${u}`;
+  if (win) window.open(win, kind === "email" ? "_self" : "_blank");
+}
+function setupShare() {
+  const btn = $("share-btn"), menu = $("share-menu");
+  btn.addEventListener("click", (e) => { e.stopPropagation(); menu.hidden = !menu.hidden; $("share-copied").textContent = ""; });
+  menu.querySelectorAll("[data-share]").forEach(b =>
+    b.addEventListener("click", (e) => { e.stopPropagation(); doShare(b.dataset.share); }));
+  document.addEventListener("click", () => { menu.hidden = true; });
+}
+
+// ---- Enkel användare (lösenordslös profil) ----
+function renderUser() {
+  const lbl = $("user-label");
+  lbl.innerHTML = currentUser
+    ? `${T("active_user","Aktiv användare")}: <b>${currentUser}</b>`
+    : T("no_user","Ingen användare vald — dina serverkörningar sparas öppet.");
+  $("user-name").value = currentUser;
+}
+function setUser() {
+  currentUser = $("user-name").value.trim().slice(0, 60);
+  localStorage.setItem("eystra_user", currentUser);
+  renderUser(); loadSavedList();
+}
+
+// ---- Dagens hälsa (baslinjen) ----
+function renderTodayHealth() {
+  if (!DEF || !DEF.dagens_halsa) return;
+  const v = DEF.dagens_halsa.index;
+  const col = v >= 66 ? "var(--good)" : v >= 40 ? "var(--warn)" : "var(--bad)";
+  $("today-health").innerHTML =
+    `🩺 ${T("today_health","Dagens hälsa")}: <b style="color:${col}">${v}/100</b>`;
+}
+
 // ---- Tala-till-text (webbläsarens Web Speech API, funkar i Chrome) ----
 function setupMic() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -991,9 +1058,25 @@ async function init() {
   $("exp-run").addEventListener("click", runExport);
   $("exp-mail").addEventListener("click", openMail);
 
+  $("share-btn") && setupShare();
+  $("user-set").addEventListener("click", setUser);
+  renderUser();
+  renderTodayHealth();
+
   buildMap();
   selectZone(selectedZone);
   loadSavedList();
+
+  // Delad länk? Läs in scenariot ur ?s= och kör det
+  const shared = new URLSearchParams(location.search).get("s");
+  if (shared) {
+    try {
+      const p = JSON.parse(decodeURIComponent(escape(atob(shared))));
+      setSliders(p);
+      await run(p);
+      return;
+    } catch (e) { /* ogiltig länk → kör baslinje */ }
+  }
   await run();
 }
 

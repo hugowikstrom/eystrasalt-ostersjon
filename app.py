@@ -40,6 +40,19 @@ app = Flask(__name__, static_folder=WEB_DIR, static_url_path="")
 CORS(app)
 
 
+_TODAY_HEALTH = None  # cache: dagens (baslinjens) hälsa räknas en gång per serverstart
+
+
+def _today_health():
+    """Ekosystemets hälsa idag (baslinjen, inga åtgärder). Cachas."""
+    global _TODAY_HEALTH
+    if _TODAY_HEALTH is None:
+        from model import health as H
+        res = simulate(EcoParams(years=5))
+        _TODAY_HEALTH = H.health_at(res, 1)
+    return _TODAY_HEALTH
+
+
 def _load_help():
     try:
         with open(os.path.join(DATA_DIR, "help.json"), encoding="utf-8") as f:
@@ -94,6 +107,7 @@ def defaults():
         "diet": S.DIET,
         "help": _load_help(),
         "langs": i18n.LANGS,
+        "dagens_halsa": _today_health(),
         "baseline": {
             "years": base.years, "temp_delta": base.temp_delta,
             "nutrient_load": base.nutrient_load, "salinity_delta": base.salinity_delta,
@@ -185,9 +199,10 @@ def api_ai_suggest_reports():
 @app.route("/api/saved", methods=["GET", "POST"])
 def api_saved():
     if request.method == "GET":
-        return jsonify({"sparade": saved.list_saved()})
+        return jsonify({"sparade": saved.list_saved(request.args.get("user"))})
     data = request.get_json(force=True) or {}
-    meta = saved.save(data.get("namn"), data.get("params"), data.get("summary"))
+    meta = saved.save(data.get("namn"), data.get("params"),
+                      data.get("summary"), data.get("user"))
     return jsonify({"ok": True, "sparad": meta})
 
 

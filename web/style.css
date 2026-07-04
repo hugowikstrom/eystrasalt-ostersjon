@@ -245,10 +245,31 @@ input[type=text] { width: 100%; background: var(--panel2); color: var(--text);
   main.view.active { grid-template-columns: 1fr; }
 }
 
-/* ---- Språkväljare ---- */
+/* ---- Header-rad (hälsa, dela, språk) ---- */
 .head-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.head-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .lang-pick { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 0.85rem; }
 .lang-pick select { width: auto; min-width: 120px; padding: 5px 8px; }
+
+.today-health { background: var(--panel2); border: 1px solid var(--line); border-radius: 20px;
+  padding: 6px 14px; font-size: 0.9rem; white-space: nowrap; }
+
+/* ---- Dela ---- */
+.share-box { position: relative; }
+.share-btn { width: auto; margin: 0; padding: 7px 14px; border-radius: 20px; }
+.share-menu { position: absolute; top: 110%; right: 0; z-index: 60; width: 210px;
+  background: #05131f; border: 1px solid var(--accent); border-radius: 10px;
+  padding: 6px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 2px; }
+.share-menu[hidden] { display: none; }
+.share-menu button { width: 100%; margin: 0; text-align: left; background: transparent; border: none;
+  padding: 8px 10px; border-radius: 6px; }
+.share-menu button:hover { background: var(--line); }
+.share-menu .hint { padding: 4px 10px; }
+
+/* ---- Profil (enkel användare) ---- */
+.profile { margin-bottom: 8px; }
+.profile .row2 input { flex: 1; margin: 0; }
+.profile .row2 button { flex: 0 0 auto; width: auto; padding: 8px 12px; }
 
 /* ---- Spara/ladda + knapprader ---- */
 .row2 { display: flex; gap: 8px; }

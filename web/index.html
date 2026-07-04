@@ -10,9 +10,25 @@
   <header>
     <div class="head-top">
       <h1 data-i18n="app_title">🌊 Eystrasalt — Östersjöns ekosystem</h1>
-      <label class="lang-pick"><span data-i18n="language">Språk</span>
-        <select id="lang"></select>
-      </label>
+      <div class="head-actions">
+        <span class="today-health" id="today-health" title="Ekosystemets hälsa idag (baslinjen)"></span>
+        <div class="share-box">
+          <button id="share-btn" class="share-btn">🔗 <span data-i18n="share">Dela</span></button>
+          <div id="share-menu" class="share-menu" hidden>
+            <button data-share="copy" data-i18n="share_copy">Kopiera länk</button>
+            <button data-share="native" data-i18n="share_native">Dela via enhet…</button>
+            <button data-share="email">✉ E-post</button>
+            <button data-share="facebook">Facebook</button>
+            <button data-share="x">X (Twitter)</button>
+            <button data-share="linkedin">LinkedIn</button>
+            <button data-share="whatsapp">WhatsApp</button>
+            <div id="share-copied" class="hint"></div>
+          </div>
+        </div>
+        <label class="lang-pick"><span data-i18n="language">Språk</span>
+          <select id="lang"></select>
+        </label>
+      </div>
     </div>
     <p class="tagline" data-i18n="tagline">Simulera hela kretsloppet från näringssalter till säl, jämför strategier under osäkerhet och se vad ett friskare hav är värt.</p>
     <nav class="tabs" id="tabs">
@@ -99,6 +115,13 @@
       <button id="run" class="primary" data-i18n="run">▶ Kör simulering</button>
 
       <h3><span data-i18n="save_load">Spara / ladda</span> <span class="help" data-k="saved"></span></h3>
+      <div class="profile">
+        <div id="user-label" class="hint"></div>
+        <div class="row2">
+          <input id="user-name" type="text" data-i18n-ph="user_ph" placeholder="Välj ett användarnamn">
+          <button id="user-set" data-i18n="set_user">Sätt</button>
+        </div>
+      </div>
       <input id="save-name" type="text" data-i18n-ph="save_name_ph" placeholder="Namn på körningen">
       <div class="row2">
         <button id="save-server" data-i18n="save_server">Spara på server</button>

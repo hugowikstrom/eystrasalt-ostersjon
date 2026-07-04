@@ -312,3 +312,46 @@ input[type=text] { width: 100%; background: var(--panel2); color: var(--text);
 .about a { color: var(--accent2); }
 .about-links { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; }
 .about-quote { color: var(--muted); font-style: italic; border-left: 3px solid var(--accent); padding-left: 12px; }
+
+/* ============================================================
+   MOBIL-LAYOUT (telefon) — graferna störst, kartan mindre
+   ============================================================ */
+@media (max-width: 760px) {
+  header { padding: 12px 14px 4px; }
+  header h1 { font-size: 1.15rem; }
+  .tagline { font-size: 0.82rem; margin-top: 2px; }
+  .head-top { gap: 8px; }
+  .head-actions { gap: 8px; }
+  .today-health { font-size: 0.8rem; padding: 5px 10px; }
+
+  /* Flikraden blir en horisontell swipe-rad istället för att radbrytas */
+  .tabs { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch;
+    margin-top: 8px; padding-bottom: 2px; }
+  .tab { flex: 0 0 auto; padding: 7px 12px; font-size: 0.85rem; }
+
+  /* Sim-fliken: en kolumn, stapla reglage → grafer → karta med flexordning */
+  main.view.active { display: flex; flex-direction: column; gap: 12px;
+    padding: 12px 14px 28px; }
+  section.view.active { padding: 12px 14px 28px; gap: 12px; }
+  .panel { padding: 12px; border-radius: 12px; }
+
+  .controls   { order: 1; }
+  .charts-area { order: 2; }  /* grafer högt upp — mest fokus */
+  .map-area    { order: 3; }  /* kartan under, liten */
+
+  /* Kartan liten och centrerad istället för en stor kvadrat */
+  #map { width: min(62vw, 240px); height: auto; aspect-ratio: 1 / 1;
+    margin: 8px auto; }
+  .map-head { flex-wrap: wrap; }
+
+  /* Graferna får mer höjd på mobil */
+  .chart { height: 190px; }
+  #chart-main { height: 230px; }
+  #chart-uttak, #chart-trofi { height: 200px; }
+
+  /* Kontroller som staplar bättre på liten skärm */
+  .mc-controls, .eco-controls { flex-direction: column; align-items: stretch; gap: 10px; }
+  .slider.inline { width: 100%; }
+  .sens-row .name { flex-basis: 130px; }
+  .sens-row .src { display: none; }
+}

@@ -32,7 +32,7 @@ header h1 { margin: 0; font-size: 1.6rem; letter-spacing: 0.5px; }
 
 main {
   display: grid;
-  grid-template-columns: 290px 1fr 480px;
+  grid-template-columns: 280px 1fr 360px;
   gap: 16px;
   padding: 16px 28px 40px;
   align-items: start;
@@ -67,6 +67,11 @@ textarea { resize: vertical; }
 .slider { margin: 10px 0; }
 .slider label { display: block; font-size: 0.85rem; margin-bottom: 4px; color: var(--muted); }
 .slider .val { color: var(--text); font-weight: 700; }
+
+/* Kompakta reglage i vänsterpanelen: etikett+värde till vänster, slider till höger */
+.controls .slider { display: flex; align-items: center; gap: 10px; margin: 6px 0; }
+.controls .slider label { flex: 0 0 50%; margin: 0; font-size: 0.8rem; line-height: 1.2; }
+.controls .slider input[type=range] { flex: 1; width: auto; }
 
 input[type=range] {
   -webkit-appearance: none; appearance: none;
@@ -107,7 +112,7 @@ button:disabled { opacity: 0.5; cursor: wait; }
 .map-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
 .map-head select { width: auto; min-width: 160px; }
 #map {
-  width: 100%; max-width: 420px; aspect-ratio: 1 / 1; margin: 8px auto;
+  width: 100%; max-width: 360px; aspect-ratio: 1 / 1; margin: 8px auto;
   background: #071521; border-radius: 12px; border: 1px solid var(--line);
 }
 .zone-blob { cursor: pointer; transition: fill 0.25s, stroke-width 0.15s; }
@@ -132,7 +137,7 @@ button:disabled { opacity: 0.5; cursor: wait; }
 /* Grafer */
 .charts-area .col-head { display: flex; justify-content: space-between; align-items: baseline; }
 #zone-name { color: var(--text); }
-.chart { width: 100%; height: 210px; }
+.chart { width: 100%; height: 240px; }
 .chart svg { width: 100%; height: 100%; }
 .axis { stroke: var(--line); stroke-width: 0.5; }
 .gridline { stroke: var(--line); stroke-width: 0.3; opacity: 0.5; }
@@ -159,7 +164,7 @@ button:disabled { opacity: 0.5; cursor: wait; }
 
 .view { display: none; }
 .view.active { display: grid; }
-main.view.active { grid-template-columns: 290px 1fr 480px; gap: 16px;
+main.view.active { grid-template-columns: 280px 1fr 360px; gap: 16px;
   padding: 16px 28px 40px; align-items: start; }
 section.view.active { grid-template-columns: 1fr; gap: 16px; padding: 16px 28px 40px; }
 .panel.wide { max-width: 1100px; }
@@ -286,8 +291,8 @@ input[type=text] { width: 100%; background: var(--panel2); color: var(--text);
   background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
 #chart-uttak svg, #chart-trofi svg { width: 100%; height: 100%; }
 #chart-uttak, #chart-trofi { width: 100%; height: 320px; }
-#chart-main { height: 280px; }        /* huvudgrafen störst */
-#chart-health { height: 190px; }
+#chart-main { height: 360px; }        /* huvudgrafen störst */
+#chart-health { height: 200px; }
 
 /* ---- Export ---- */
 .export-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 10px 0; }

@@ -467,7 +467,11 @@ def simulate(p: EcoParams):
 
     # Hälso-index (0–100) över tid — för graf och sammanfattning
     from . import health as H
-    result["health"] = H.health_series(result, step_years=max(0.5, p.years / 60.0))
+    _step = max(0.5, p.years / 60.0)
+    result["health"] = H.health_series(result, step_years=_step)
+    # Hälsa per zon (beror på markerad region i kartan)
+    result["health_zones"] = {z.key: H.zone_health_series(result, z.key, step_years=_step)
+                              for z in ZONES}
     return result
 
 

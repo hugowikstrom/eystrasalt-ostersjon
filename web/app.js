@@ -320,7 +320,9 @@ function drawHealthChart() {
   if (!RES || !RES.health) return;
   const el = $("chart-health");
   const W = 360, H = 90, ml = 26, mr = 8, mt = 6, mb = 16;
-  const ys = RES.health.years, vs = RES.health.index, n = ys.length;
+  // Hälsa för den markerade zonen (faller tillbaka på hela havet)
+  const hz = (RES.health_zones && RES.health_zones[selectedZone]) || RES.health;
+  const ys = hz.years, vs = hz.index, n = ys.length;
   const xmax = ys[n-1] || 1;
   const X = (x) => ml + (x / xmax) * (W - ml - mr);
   const Y = (y) => mt + (1 - y / 100) * (H - mt - mb);
@@ -332,8 +334,9 @@ function drawHealthChart() {
   let pts = "";
   for (let i = 0; i < n; i++) pts += `${X(ys[i]).toFixed(1)},${Y(vs[i]).toFixed(1)} `;
   svg += `<polyline points="${pts}" fill="none" stroke="#4ade80" stroke-width="1.8"/>`;
-  const cur = RES.health.index[n-1];
-  svg += `<text class="serie-label" x="${ml+2}" y="10" fill="#4ade80">${T("health_title","Hälsoindex")}: ${cur.toFixed(0)}/100</text>`;
+  const cur = vs[n-1];
+  const zn = RES.zone_names ? RES.zone_names[selectedZone] : "";
+  svg += `<text class="serie-label" x="${ml+2}" y="10" fill="#4ade80">${zn} — ${T("health_title","Hälsoindex")}: ${cur.toFixed(0)}/100</text>`;
   svg += `</svg>`;
   el.innerHTML = svg;
 }

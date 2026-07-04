@@ -136,25 +136,6 @@
       <p id="ai-motiv" class="hint"></p>
     </aside>
 
-    <section class="panel map-area">
-      <div class="map-head">
-        <h2><span data-i18n="map">Karta</span> <span class="help" data-k="layer"></span></h2>
-        <select id="layer"></select>
-      </div>
-      <svg id="map" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet"></svg>
-
-      <div class="timeline">
-        <button id="play">▶</button>
-        <input type="range" id="time" min="0" max="0" step="1" value="0">
-        <span id="time-label" class="time-label">år 0</span>
-      </div>
-      <div id="legend" class="legend"></div>
-      <div id="status" class="status">Kör en simulering för att börja…</div>
-
-      <h3><span data-i18n="health_title">Ekosystemets hälsa</span> <span class="help" data-k="health"></span></h3>
-      <div class="chart" id="chart-health"></div>
-    </section>
-
     <section class="panel charts-area">
       <div class="col-head">
         <h2><span data-i18n="zone">Zon</span>: <span id="zone-name">—</span></h2>
@@ -174,9 +155,28 @@
       <div class="chart" id="chart-main"></div>
       <div class="unit-label" id="unit-main"></div>
 
+      <h3><span data-i18n="health_title">Ekosystemets hälsa</span> <span class="help" data-k="health"></span></h3>
+      <div class="chart" id="chart-health"></div>
+
       <h2 data-i18n="ecolog_interpret">🤖 Ekologens tolkning</h2>
       <button id="explain" data-i18n="explain_btn">Förklara resultatet</button>
       <p id="ai-explain" class="explain"></p>
+    </section>
+
+    <section class="panel map-area">
+      <div class="map-head">
+        <h2><span data-i18n="map">Karta</span> <span class="help" data-k="layer"></span></h2>
+        <select id="layer"></select>
+      </div>
+      <svg id="map" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet"></svg>
+
+      <div class="timeline">
+        <button id="play">▶</button>
+        <input type="range" id="time" min="0" max="0" step="1" value="0">
+        <span id="time-label" class="time-label">år 0</span>
+      </div>
+      <div id="legend" class="legend"></div>
+      <div id="status" class="status">Kör en simulering för att börja…</div>
     </section>
   </main>
 

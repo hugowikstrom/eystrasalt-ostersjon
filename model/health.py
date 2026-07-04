@@ -96,3 +96,44 @@ def health_series(res, step_years=1.0):
     years = list(np.arange(step_years, tmax + 1e-9, step_years))
     return {"years": [round(y, 1) for y in years],
             "index": [health_at(res, y)["index"] for y in years]}
+
+
+# --- Hälsa per zon -----------------------------------------------------------
+# Samma formel som för hela havet, men beräknad på en enskild zons värden.
+# Biomassa-målen skalas ner med antalet zoner (totalmålen är summor över alla
+# zoner), så en enskild zons index blir jämförbart. Syret är redan per zon.
+NZONES = len(ZONES)
+
+
+def _zone_mean(res, zone, comp, year):
+    return _annual_mean(res["series"][zone][comp], res["t"], year)
+
+
+def zone_health_at(res, zone, year):
+    """Hälso-index (0–100) för EN zon vid ett givet år."""
+    torsk = _zone_mean(res, zone, "torsk", year)
+    kust = _zone_mean(res, zone, "abborre", year) + _zone_mean(res, zone, "gadda", year)
+    sill = _zone_mean(res, zone, "sill", year)
+    skarp = _zone_mean(res, zone, "skarpsill", year)
+    spigg = _zone_mean(res, zone, "spigg", year)
+    cyano = _zone_mean(res, zone, "cyano", year)
+    o2b = _zone_mean(res, zone, "O2b", year)
+
+    s_torsk = _clip01(torsk / (TORSK_TARGET / NZONES))
+    s_kust = _clip01(kust / (KUST_TARGET / NZONES))
+    s_syre = _clip01(o2b / OXY_TARGET)
+    s_cyano = _clip01((CYANO_HI - cyano * NZONES) / (CYANO_HI - CYANO_LO))
+    planktiv = sill + skarp + spigg + 0.1
+    s_balans = _clip01(1.0 - spigg / planktiv)
+
+    idx = 100.0 * (W["torsk"] * s_torsk + W["kust"] * s_kust + W["syre"] * s_syre
+                   + W["cyano"] * s_cyano + W["balans"] * s_balans)
+    return round(idx, 1)
+
+
+def zone_health_series(res, zone, step_years=1.0):
+    """Hälso-indexet över tid för EN zon."""
+    tmax = res["t"][-1]
+    years = list(np.arange(step_years, tmax + 1e-9, step_years))
+    return {"years": [round(y, 1) for y in years],
+            "index": [zone_health_at(res, zone, y) for y in years]}

@@ -9,6 +9,7 @@
   "tab_reports": "Rapporter & forskning",
   "tab_ideas": "Idélåda",
   "tab_export": "Exportera",
+  "tab_om": "Om",
   "language": "Språk",
   "scenario": "Scenario",
   "stress": "Stress-reglage",
@@ -108,5 +109,17 @@
   "arter": "Arter (start → slut)",
   "pyramid": "Näringspyramid (biomassa per nivå)",
   "uttak": "Uttag ur havet (per år)",
-  "strategi": "Bästa strategi & ekonomi"
+  "strategi": "Bästa strategi & ekonomi",
+  "mic_start": "Tala in din idé",
+  "mic_listening": "🎤 Lyssnar… tala nu.",
+  "mic_unsupported": "Tala-till-text stöds inte i den här webbläsaren (prova Chrome).",
+  "about_title": "Om Eystrasalt",
+  "about_body1": "Eystrasalt är en öppen, pedagogisk ekosystemsimulering av Östersjön — hela kretsloppet från näringssalter till toppredatorer och tillbaka igen. Målet är att skapa förståelse, samla ihop kunskap på ett ställe och göra ekologiska simuleringar förankrade i känd litteratur och forskning.",
+  "about_body2": "Jag som byggt det här är en glad amatör med ett stort hjärta för Östersjön och för jordens välmående i stort — inte en havsforskare. Koden är genererad tillsammans med Claude (AI). Det finns med säkerhet förbättringar att göra och fel i beräkningsmodeller, parametrar och data. Modellen är en rimlig, litteraturförankrad förenkling — inte en forskningsvaliderad prognosmodell.",
+  "about_body3": "Därför är detta open source. Ladda ned det, granska det, håll inte med, gör det bättre. Har du kunskap, data, en rättelse eller en önskan — hör av dig eller skicka en idé via Idélådan. Tillsammans kan vi förfina en riktigt bra digital tvilling för vårt innanhav. 💙",
+  "about_model_title": "Vad modellen innehåller",
+  "about_model": "17 arter i näringsväven (näringssalter, växtplankton, cyanobakterier, djurplankton, bottenfauna, sill, skarpsill, spigg, abborre, gädda, torsk, lax, sjöfågel/skarv, säl, ytsyre, bottensyre, detritus/kadaver), 6 zoner med salthaltsgradient, verifiering mot litteraturen och ett AI-lager. Referensbiblioteket bygger på HELCOM, ICES, SMHI, Havs- och vattenmyndigheten m.fl.",
+  "about_contact": "Kontakt",
+  "about_license": "Licens: open source (MIT). Ingen garanti — se brasklappen ovan.",
+  "about_quote": "\"Ett friskare hav är värt mer än vi tror — och förståelse är första steget.\""
 }

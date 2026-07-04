@@ -24,6 +24,7 @@
       <button class="tab" data-tab="reports" data-i18n="tab_reports">Rapporter &amp; forskning</button>
       <button class="tab" data-tab="ideas" data-i18n="tab_ideas">Idélåda</button>
       <button class="tab" data-tab="export" data-i18n="tab_export">Exportera</button>
+      <button class="tab" data-tab="om" data-i18n="tab_om">Om</button>
     </nav>
   </header>
 
@@ -255,7 +256,11 @@
       <h2><span data-i18n="ideas_title">Idélåda — alla kan bidra</span> <span class="help" data-k="ideas"></span></h2>
       <p class="hint" data-i18n="ideas_hint">Har du en idé, en förbättring eller kunskap om Östersjön? Dela den här.</p>
       <input id="idea-name" type="text" data-i18n-ph="idea_name_ph" placeholder="Ditt namn (valfritt)">
-      <textarea id="idea-text" rows="4" data-i18n-ph="idea_text_ph" placeholder="Din idé eller ditt förslag…"></textarea>
+      <div class="mic-wrap">
+        <textarea id="idea-text" rows="4" data-i18n-ph="idea_text_ph" placeholder="Din idé eller ditt förslag…"></textarea>
+        <button id="idea-mic" class="mic" title="Tala in din idé" type="button">🎤</button>
+      </div>
+      <div id="mic-status" class="hint"></div>
       <button id="idea-add" class="primary" data-i18n="idea_add">Skicka idé</button>
       <div id="idea-status" class="hint"></div>
       <h3 data-i18n="ideas_list">Inskickade idéer</h3>
@@ -289,6 +294,24 @@
         <button id="exp-mail" data-i18n="email_btn">✉ Öppna e-post till mottagaren</button>
       </div>
       <div id="exp-status" class="status"></div>
+    </div>
+  </section>
+
+  <!-- ============ FLIK: OM ============ -->
+  <section class="view" id="view-om">
+    <div class="panel wide about">
+      <h2 data-i18n="about_title">Om Eystrasalt</h2>
+      <p data-i18n="about_body1">Eystrasalt är en öppen, pedagogisk ekosystemsimulering av Östersjön — hela kretsloppet från näringssalter till toppredatorer och tillbaka igen. Målet är att skapa förståelse, samla ihop kunskap på ett ställe och göra ekologiska simuleringar förankrade i känd litteratur och forskning.</p>
+      <p data-i18n="about_body2">Jag som byggt det här är en glad amatör med ett stort hjärta för Östersjön och för jordens välmående i stort — inte en havsforskare. Koden är genererad tillsammans med Claude (AI). Det finns med säkerhet förbättringar att göra och fel i beräkningsmodeller, parametrar och data. Modellen är en rimlig, litteraturförankrad förenkling — inte en forskningsvaliderad prognosmodell.</p>
+      <p data-i18n="about_body3">Därför är detta open source. Ladda ned det, granska det, håll inte med, gör det bättre. Har du kunskap, data, en rättelse eller en önskan — hör av dig eller skicka en idé via Idélådan. Tillsammans kan vi förfina en riktigt bra digital tvilling för vårt innanhav. 💙</p>
+      <h3 data-i18n="about_model_title">Vad modellen innehåller</h3>
+      <p data-i18n="about_model">17 arter i näringsväven (näringssalter, växtplankton, cyanobakterier, djurplankton, bottenfauna, sill, skarpsill, spigg, abborre, gädda, torsk, lax, sjöfågel/skarv, säl, ytsyre, bottensyre, detritus/kadaver), 6 zoner med salthaltsgradient, verifiering mot litteraturen och ett AI-lager. Referensbiblioteket bygger på HELCOM, ICES, SMHI, Havs- och vattenmyndigheten m.fl.</p>
+      <p class="about-links">
+        <b data-i18n="about_contact">Kontakt</b>: <a href="mailto:hugo@bigakwa.com">hugo@bigakwa.com</a><br>
+        <b>GitHub</b>: <a href="https://github.com/hugowikstrom/eystrasalt-ostersjon" target="_blank" rel="noopener">github.com/hugowikstrom/eystrasalt-ostersjon</a><br>
+        <span data-i18n="about_license">Licens: open source (MIT). Ingen garanti — se brasklappen ovan.</span>
+      </p>
+      <p class="about-quote" data-i18n="about_quote">"Ett friskare hav är värt mer än vi tror — och förståelse är första steget."</p>
     </div>
   </section>
 

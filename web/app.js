@@ -63,6 +63,10 @@ const PRESETS = {
 const $ = (id) => document.getElementById(id);
 const T = (k, fallback) => STR[k] || fallback || k;
 const BASE_YEAR = 2025;    // simuleringens startår (år 0 = nuläge)
+// Språkkod → talspråk (locale) för webbläsarens tala-till-text
+const LOCALE = { sv:"sv-SE", en:"en-US", fi:"fi-FI", et:"et-EE", lv:"lv-LV",
+                 lt:"lt-LT", ru:"ru-RU", pl:"pl-PL", de:"de-DE", da:"da-DK" };
+let recognition = null, recognizing = false;
 
 // Enkel markdown → HTML (fetstil **x**, kursiv *x*, rubriker ##, punktlistor)
 function mdToHtml(t) {
@@ -830,6 +834,37 @@ function openMail() {
   window.location.href = `mailto:${to}?subject=${subj}&body=${body}`;
 }
 
+// ---- Tala-till-text (webbläsarens Web Speech API, funkar i Chrome) ----
+function setupMic() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const btn = $("idea-mic");
+  if (!btn) return;
+  if (!SR) { btn.disabled = true; btn.title = T("mic_unsupported","Stöds ej"); return; }
+  btn.addEventListener("click", () => {
+    if (recognizing) { recognition && recognition.stop(); return; }
+    recognition = new SR();
+    recognition.lang = LOCALE[$("lang").value] || "sv-SE";
+    recognition.interimResults = true;
+    recognition.continuous = true;
+    let base = $("idea-text").value;
+    recognition.onstart = () => { recognizing = true; btn.classList.add("rec");
+      $("mic-status").textContent = T("mic_listening","🎤 Lyssnar…"); };
+    recognition.onerror = (e) => { $("mic-status").textContent = "🎤 " + e.error; };
+    recognition.onend = () => { recognizing = false; btn.classList.remove("rec");
+      if (!$("mic-status").textContent.startsWith("🎤 ")) {} $("mic-status").textContent = ""; };
+    recognition.onresult = (ev) => {
+      let fin = "", interim = "";
+      for (let i = ev.resultIndex; i < ev.results.length; i++) {
+        const tr = ev.results[i][0].transcript;
+        if (ev.results[i].isFinal) fin += tr; else interim += tr;
+      }
+      if (fin) base = (base ? base + " " : "") + fin.trim();
+      $("idea-text").value = (base + (interim ? " " + interim : "")).trim();
+    };
+    recognition.start();
+  });
+}
+
 // ---- Tooltips ----
 function buildTooltips() {
   document.querySelectorAll(".help").forEach(el => {
@@ -923,6 +958,7 @@ async function init() {
   $("verify-run").addEventListener("click", runVerify);
   $("rep-add").addEventListener("click", addReport);
   $("idea-add").addEventListener("click", addIdea);
+  setupMic();
   $("exp-run").addEventListener("click", runExport);
   $("exp-mail").addEventListener("click", openMail);
 

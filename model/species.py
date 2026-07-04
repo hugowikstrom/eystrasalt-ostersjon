@@ -45,18 +45,20 @@ DISPLAY = {
     "sal": "Säl", "O2": "Ytsyre", "O2b": "Bottensyre", "det": "Detritus/kadaver",
 }
 
-# Enheter för y-axeln i graferna. Biomassorna är RELATIVA modellindex (inte ton);
-# syret tolkas som % syremättnad (0 = syrefritt/dött, ~100 = mättat, >100 =
-# övermättnad vid algblomning). Näring/detritus i relativa näringsenheter.
+# Enheter för y-axeln i graferna. SI-enheter, konsekvent som i hela-ekosystem-
+# massbalansmodeller (Ecopath): all levande biomassa i g/m² (= ton/km²), löst
+# näring i mg/m³, syre i % mättnad (0 = syrefritt/dött, ~100 = mättat, >100 =
+# övermättnad vid algblomning). OBS: de absoluta talen är modellindex i denna
+# storleksordning — inte uppmätta beståndsuppskattningar.
 UNIT = {
-    "N": "rel. näringsenhet", "phyto": "mg klorofyll/m³ (rel.)",
-    "cyano": "mg klorofyll/m³ (rel.)", "zoo": "biomassa (rel.)",
-    "bentos": "biomassa (rel.)",
-    "sill": "biomassaindex", "skarpsill": "biomassaindex", "spigg": "biomassaindex",
-    "abborre": "biomassaindex", "gadda": "biomassaindex",
-    "torsk": "biomassaindex", "lax": "biomassaindex",
-    "fagel": "antal (rel.)", "sal": "antal (rel.)",
-    "O2": "% syremättnad", "O2b": "% syremättnad", "det": "rel. enhet",
+    "N": "mg/m³", "phyto": "g/m²",
+    "cyano": "g/m²", "zoo": "g/m²",
+    "bentos": "g/m²",
+    "sill": "g/m²", "skarpsill": "g/m²", "spigg": "g/m²",
+    "abborre": "g/m²", "gadda": "g/m²",
+    "torsk": "g/m²", "lax": "g/m²",
+    "fagel": "g/m²", "sal": "g/m²",
+    "O2": "% mättnad", "O2b": "% mättnad", "det": "g/m²",
 }
 
 # --- Planktondynamik ---------------------------------------------------------

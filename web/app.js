@@ -172,7 +172,7 @@ function layerUnit(layer) {
   if (layer.key === "temp") return "°C";
   if (layer.key === "salinity") return "PSU";
   if (layer.key === "O2" || layer.key === "O2b") return "%";
-  return "rel.";   // biomassa-index (relativt)
+  return "g/m²";   // biomassa (g/m² ≈ ton/km²)
 }
 
 // Tårtdiagram för en zon: tårtbitar per art + totalmassa i mitten
@@ -208,7 +208,7 @@ function pieSvg(z) {
        + `stroke="${sel ? '#fff' : '#0a1929'}" stroke-width="${sel ? 1.1 : 0.5}"/>`;
   out += `<circle cx="${cx}" cy="${cy}" r="${r*0.5}" fill="#0d2135" opacity="0.9"/>`;
   out += `<text x="${cx}" y="${cy}" class="pie-total">${shortNum(total)}</text>`;
-  out += `<text x="${cx}" y="${cy+2.3}" class="pie-unit">rel.</text>`;
+  out += `<text x="${cx}" y="${cy+2.3}" class="pie-unit">g/m²</text>`;
   out += `<text x="${cx}" y="${cy + r + 3}" class="zone-label">${zd.name}</text>`;
   return `<g data-zone="${z}" style="cursor:pointer">${out}</g>`;
 }
@@ -584,7 +584,7 @@ function drawCatchWeight() {
   $("catch-legend").innerHTML =
     `<span><span class="swatch" style="background:${cV}"></span>${T("weight_series", "Total biomassa (vikt) — vänster axel")}</span>`
     + `<span><span class="swatch" style="background:${cF}"></span>${T("catch_series", "Fångst/fiske per år — höger axel")}</span>`
-    + `<span class="band">${T("unit_rel_yr", "enhet: relativt biomassaindex (vikt) resp. /år (fångst)")}</span>`;
+    + `<span class="band">${T("unit_rel_yr", "enhet: g/m² (vikt) resp. g/m²/år (fångst)")}</span>`;
 }
 
 function drawUttak() {
@@ -597,7 +597,7 @@ function drawUttak() {
   ];
   if (u.atervinning) series.push({ data: u.atervinning, color: UCOL.atervinning, label: "Återvinning (nedbrytning)" });
   multiLine("chart-uttak", u.years, series);
-  $("uttak-legend").innerHTML = legendHtml(series) + `<span class="band">enhet: biomassa/år (rel.)</span>`;
+  $("uttak-legend").innerHTML = legendHtml(series) + `<span class="band">enhet: g/m²/år</span>`;
 }
 function drawTrofi() {
   if (!RES || !RES.trofi) return;

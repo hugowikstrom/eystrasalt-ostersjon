@@ -54,6 +54,7 @@
   "mc_run": "▶ Kör Monte Carlo",
   "mc_from_sliders": "Klimat/övergödning tas från reglagen i Simulering-fliken.",
   "mc_results_title": "Återhämtning per strategi (hälsoindex 0–100)",
+  "mc_click_hint": "Klicka på en strategi i tabellen för att ladda in dess värden i simuleringen och analysera resultatet.",
   "research_title": "Var behövs mer forskning? (känslighetsanalys)",
   "research_hint": "Hög stapel = den osäkra parametern styr utfallet mest → där är kunskapsluckan dyrast för besluten.",
   "research_run": "🤖 Låt AI:n föreslå forskning",

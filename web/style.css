@@ -203,6 +203,9 @@ th, td { border: 1px solid var(--line); padding: 6px 9px; text-align: right; }
 th:first-child, td:first-child { text-align: left; }
 thead th { background: var(--panel2); color: var(--accent2); }
 tr.best-row td { background: rgba(74,222,128,0.12); }
+tr.strat-row { cursor: pointer; transition: background 0.12s; }
+tr.strat-row:hover td { background: rgba(78,168,255,0.14); }
+td.load-cell { color: var(--accent); font-weight: 600; white-space: nowrap; font-size: 0.8rem; }
 td.pos { color: var(--good); } td.neg { color: var(--bad); }
 .band { color: var(--muted); font-size: 0.78rem; }
 

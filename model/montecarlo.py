@@ -258,13 +258,17 @@ def run(draws=16, temp_delta=0.0, salinity_delta=0.0, nutrient_load=1.0, seed0=0
     kanslighet.sort(key=lambda k: abs(k["korrelation"]), reverse=True)
 
     return {
-        "strategier": [{"key": k, "namn": v["namn"]} for k, v in STRATEGIES.items()],
+        "strategier": [{"key": k, "namn": v["namn"], "params": v["params"]}
+                       for k, v in STRATEGIES.items()],
         "horisonter": HORIZONS,
         "lander": ECON.COUNTRIES,
         "resultat": resultat,
         "basta": basta,
         "kanslighet": kanslighet,
         "n_draws": draws,
+        # Den gemensamma stress-kontexten som strategierna kördes i (från reglagen)
+        "kontext": {"temp_delta": temp_delta, "salinity_delta": salinity_delta,
+                    "nutrient_load": nutrient_load},
     }
 
 

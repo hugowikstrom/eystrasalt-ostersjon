@@ -614,24 +614,27 @@ function renderMC() {
   const bestKey = MC.basta[String(H[H.length-1])];
   const best = MC.resultat[bestKey];
   $("mc-best").innerHTML = `Bäst återhämtning på sikt: <b>${best.namn}</b> — ${T("health_title","hälsoindex")} `
-    + `${best.halsa[H[H.length-1]].mean}/100 vid ${H[H.length-1]} år.`;
+    + `${best.halsa[H[H.length-1]].mean}/100 vid ${H[H.length-1]} år.`
+    + `<div class="hint" style="margin-top:6px">👉 ${T("mc_click_hint","Klicka på en strategi i tabellen för att ladda in dess värden i simuleringen och analysera resultatet.")}</div>`;
 
-  let html = "<thead><tr><th>Strategi</th>";
+  let html = `<thead><tr><th>Strategi</th>`;
   H.forEach(h => html += `<th>${h} år</th>`);
-  html += "</tr></thead><tbody>";
+  html += `<th></th></tr></thead><tbody>`;
   MC.strategier.forEach(st => {
     const row = MC.resultat[st.key];
-    html += `<tr><td>${row.namn}</td>`;
+    html += `<tr class="strat-row" data-strat="${st.key}" title="Klicka för att ladda in i simuleringen"><td>${row.namn}</td>`;
     H.forEach(h => {
       const cell = row.halsa[h];
       const isBest = MC.basta[String(h)] === st.key;
       html += `<td${isBest ? ' class="best-cell"' : ''}><b>${cell.mean}</b>`
             + `<div class="band">${cell.p10}–${cell.p90}</div></td>`;
     });
-    html += "</tr>";
+    html += `<td class="load-cell">▶ ${T("load","Ladda")}</td></tr>`;
   });
   html += "</tbody>";
   $("mc-table").innerHTML = html;
+  $("mc-table").querySelectorAll(".strat-row").forEach(tr =>
+    tr.addEventListener("click", () => applyStrategy(tr.dataset.strat)));
 
   const maxc = Math.max(...MC.kanslighet.map(k => Math.abs(k.korrelation)), 0.01);
   $("mc-sensitivity").innerHTML = MC.kanslighet.map(k => `
@@ -881,18 +884,44 @@ function buildTooltips() {
 }
 
 // ---- Flikar ----
+function activateTab(name) {
+  document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.dataset.tab === name));
+  document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+  $("view-" + name).classList.add("active");
+  if (name === "reports") loadReports();
+  if (name === "ideas") loadIdeas();
+  if (name === "pyramid" && RES) { drawPyramid(); drawUttak(); drawTrofi(); }
+}
 function initTabs() {
-  document.querySelectorAll(".tab").forEach(tab => {
-    tab.addEventListener("click", () => {
-      document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
-      document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
-      tab.classList.add("active");
-      $("view-" + tab.dataset.tab).classList.add("active");
-      if (tab.dataset.tab === "reports") loadReports();
-      if (tab.dataset.tab === "ideas") loadIdeas();
-      if (tab.dataset.tab === "pyramid" && RES) { drawPyramid(); drawUttak(); drawTrofi(); }
-    });
-  });
+  document.querySelectorAll(".tab").forEach(tab =>
+    tab.addEventListener("click", () => activateTab(tab.dataset.tab)));
+}
+
+// ---- Ladda in en strategi i simuleringen (klick i MC-tabellen) ----
+function applyStrategy(key) {
+  if (!MC) return;
+  const strat = MC.strategier.find(s => s.key === key);
+  if (!strat) return;
+  const ov = strat.params || {};
+  const k = MC.kontext || {};
+  const baseFish = (DEF.baseline && DEF.baseline.fishing) || {};
+  // Strategin = standardfiske + strategins överlagringar, i MC:ns stress-kontext
+  const p = {
+    years: +$("years").value,
+    temp_delta: k.temp_delta != null ? k.temp_delta : +$("temp_delta").value,
+    salinity_delta: k.salinity_delta != null ? k.salinity_delta : +$("salinity_delta").value,
+    nutrient_load: ov.nutrient_load != null ? ov.nutrient_load
+                   : (k.nutrient_load != null ? k.nutrient_load : 1.0),
+    seal_hunt: +$("seal_hunt").value,
+    bird_hunt: +$("bird_hunt").value,
+    noise: +$("noise").value,
+    fishing: { ...baseFish, ...(ov.fishing || {}) },
+  };
+  setSliders(p);
+  activateTab("sim");
+  $("scenario").value = "";
+  $("status").textContent = `Laddar in strategin "${strat.namn}"…`;
+  run(p);
 }
 
 // ---- Init ----

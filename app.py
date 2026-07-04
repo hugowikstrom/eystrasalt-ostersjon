@@ -40,6 +40,28 @@ app = Flask(__name__, static_folder=WEB_DIR, static_url_path="")
 CORS(app)
 
 
+# --- Monte Carlo-cache -------------------------------------------------------
+# MC är den tyngsta körningen men helt deterministisk (fast frö). Vi sparar
+# resultatet på disk per unik uppsättning indata, så identiska körningar hämtas
+# direkt istället för att räknas om. Modellversionen (hash av model/*.py) ingår
+# i nyckeln → cachen ogiltigförklaras automatiskt om modellen ändras.
+import glob
+import hashlib
+
+MC_CACHE_DIR = os.path.join(DATA_DIR, "mc_cache")
+
+
+def _model_version():
+    h = hashlib.sha1()
+    for f in sorted(glob.glob(os.path.join(os.path.dirname(__file__), "model", "*.py"))):
+        with open(f, "rb") as fh:
+            h.update(fh.read())
+    return h.hexdigest()[:10]
+
+
+_MODEL_VER = _model_version()
+
+
 _TODAY_HEALTH = None  # cache: dagens (baslinjens) hälsa räknas en gång per serverstart
 
 
@@ -131,12 +153,29 @@ def api_simulate():
 @app.route("/api/montecarlo", methods=["POST"])
 def api_montecarlo():
     data = request.get_json(force=True) or {}
-    out = montecarlo.run(
-        draws=int(data.get("draws", 16)),
-        temp_delta=float(data.get("temp_delta", 0.0)),
-        salinity_delta=float(data.get("salinity_delta", 0.0)),
-        nutrient_load=float(data.get("nutrient_load", 1.0)),
-    )
+    draws = int(data.get("draws", 16))
+    td = float(data.get("temp_delta", 0.0))
+    sd = float(data.get("salinity_delta", 0.0))
+    nl = float(data.get("nutrient_load", 1.0))
+
+    # Cache-nyckel: modellversion + alla indata (MC är deterministisk)
+    key = f"{_MODEL_VER}|{draws}|{td:.4f}|{sd:.4f}|{nl:.4f}"
+    fname = hashlib.sha1(key.encode()).hexdigest()[:16] + ".json"
+    path = os.path.join(MC_CACHE_DIR, fname)
+    if os.path.exists(path):
+        with open(path, encoding="utf-8") as f:
+            out = json.load(f)
+        out["cachad"] = True          # frontend kan visa att det kom från cache
+        return jsonify(out)
+
+    out = montecarlo.run(draws=draws, temp_delta=td, salinity_delta=sd, nutrient_load=nl)
+    try:
+        os.makedirs(MC_CACHE_DIR, exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(out, f, ensure_ascii=False)
+    except Exception:
+        pass                          # cache är en bonus; strunta i skrivfel
+    out["cachad"] = False
     return jsonify(out)
 
 

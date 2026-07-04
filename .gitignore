@@ -14,6 +14,7 @@ out/
 data/reports/
 data/saved/
 data/ideas/
+data/mc_cache/
 data/i18n/*.json
 !data/i18n/sv.json
 

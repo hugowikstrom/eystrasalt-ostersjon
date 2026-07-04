@@ -560,8 +560,20 @@ function syncLabels() {
   $("v-f-lax").textContent = $("f-lax").value;
 }
 
+// ---- Auto-kör: kör simuleringen strax efter att man ändrat ett reglage ----
+let _autoTimer = null;
+function autoRun() {
+  clearTimeout(_autoTimer);
+  _autoTimer = setTimeout(() => {
+    $("scenario").value = "";        // egna reglage, inte ett förval
+    run(readParams());
+  }, 300);                            // vänta tills man släpper/pausar draget
+}
+
 // ---- Kör simulering ----
+let _runSeq = 0;   // sekvensnummer: bara det senaste svaret ritas (auto-kör)
 async function run(body) {
+  const myseq = ++_runSeq;
   $("run").disabled = true;
   $("status").textContent = "Simulerar… (löser ekvationerna)";
   try {
@@ -569,7 +581,9 @@ async function run(body) {
       method: "POST", headers: {"Content-Type":"application/json"},
       body: JSON.stringify(body || readParams()),
     });
-    RES = await r.json();
+    const data = await r.json();
+    if (myseq !== _runSeq) return;   // ett nyare anrop har startat → ignorera detta
+    RES = data;
     $("time").max = RES.t.length - 1;
     ti = RES.t.length - 1;
     $("zone-name").textContent = RES.zone_names[selectedZone];
@@ -578,9 +592,9 @@ async function run(body) {
     drawAllCharts();
     $("status").textContent = `Klart — ${RES.t[RES.t.length-1].toFixed(0)} år. ${T("health_title","Hälsoindex")}: ${RES.health.index[RES.health.index.length-1].toFixed(0)}/100.`;
   } catch (e) {
-    $("status").textContent = "Fel vid simulering: " + e;
+    if (myseq === _runSeq) $("status").textContent = "Fel vid simulering: " + e;
   }
-  $("run").disabled = false;
+  if (myseq === _runSeq) $("run").disabled = false;
 }
 
 // ---- Spara / ladda ----
@@ -706,7 +720,8 @@ async function runMC() {
     MC = await r.json();
     renderMC();
     fillEco();
-    $("mc-status").textContent = `Klart — ${MC.n_draws} lottningar × ${MC.strategier.length} strategier.`;
+    $("mc-status").textContent = `Klart — ${MC.n_draws} lottningar × ${MC.strategier.length} strategier.`
+      + (MC.cachad ? " ⚡ (hämtad ur cache — inga nya beräkningar)" : "");
   } catch (e) { $("mc-status").textContent = "Fel: " + e; }
   $("mc-run").disabled = false;
 }
@@ -1131,6 +1146,10 @@ async function init() {
 
   document.querySelectorAll('#view-sim input[type=range]').forEach(r =>
     r.addEventListener("input", syncLabels));
+  // Auto-kör när något stress-/fiskereglage ändras (interaktivt, ingen AI).
+  // #time (tidslinjen) ligger utanför .controls och triggar inte omkörning.
+  document.querySelectorAll('.controls input[type=range]').forEach(r =>
+    r.addEventListener("input", autoRun));
   syncLabels();
 
   $("run").addEventListener("click", () => { $("scenario").value = ""; run(); });

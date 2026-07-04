@@ -49,12 +49,32 @@ vattenmyndigheten m.fl. (egna sammanfattningar, inte upphovsrättsskyddad fullte
 git clone <detta-repo> balticsea && cd balticsea
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-
-# Lägg din API-nyckel i .env (för AI-funktionerna; simuleringen funkar utan):
-echo "ANTHROPIC_API_KEY=din-nyckel" > .env
-
 python app.py           # → http://localhost:5800
 ```
+
+**AI-funktionerna är valfria.** Simuleringen, graferna, Monte Carlo, ekonomin och
+verifieringen fungerar helt utan nyckel. Vill du ha AI:n (tolka scenarier i fritext,
+förklara resultat, föreslå forskning, översätta gränssnittet) — lägg in din **egen**
+Anthropic-nyckel:
+
+```bash
+cp .env.example .env    # fyll sedan i ANTHROPIC_API_KEY=din-egen-nyckel
+```
+
+Inga lösenord eller nycklar ligger i koden — `.env` är i `.gitignore` och checkas
+aldrig in. Var och en som kör projektet använder sin egen (valfria) nyckel.
+
+### Köra för många samtidiga användare
+
+Flasks inbyggda server räcker för test. För en publik instans, kör med en
+produktionsserver (fler arbetare = fler samtidiga besökare):
+
+```bash
+pip install gunicorn
+gunicorn -w 4 -b 0.0.0.0:5800 app:app
+```
+
+Lägg gärna en omvänd proxy (t.ex. Caddy eller nginx) framför för HTTPS.
 
 Testa modellen fristående:
 

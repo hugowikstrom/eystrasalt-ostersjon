@@ -134,6 +134,17 @@ button:disabled { opacity: 0.5; cursor: wait; }
 .legend .swatch { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -2px; margin-right: 4px; }
 .status { margin-top: 10px; color: var(--muted); font-size: 0.85rem; min-height: 1.2em; }
 
+/* Biomassa-sammanställning under grafen */
+.biomass-tbl { border-collapse: collapse; width: 100%; font-size: 0.84rem; }
+.biomass-tbl th, .biomass-tbl td { border: 1px solid var(--line); padding: 5px 9px; text-align: right; }
+.biomass-tbl th:first-child, .biomass-tbl td:first-child { text-align: left; white-space: nowrap; }
+.biomass-tbl thead th { background: var(--panel2); color: var(--accent2); position: sticky; top: 0; }
+.biomass-tbl tbody tr:hover td { background: rgba(78,168,255,0.08); }
+.biomass-tbl .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
+.biomass-tbl tr.tot-row td { border-top: 2px solid var(--accent); font-weight: 700; background: rgba(51,194,194,0.08); }
+.biomass-tbl td.pos { color: var(--good); } .biomass-tbl td.neg { color: var(--bad); }
+.tr-up { color: var(--good); } .tr-down { color: var(--bad); } .tr-flat { color: var(--muted); }
+
 /* AI-scenario: sammanställning av valda inställningar */
 .ai-settings { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--line);
   font-size: 0.78rem; line-height: 1.6; color: var(--muted); }

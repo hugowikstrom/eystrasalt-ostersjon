@@ -360,7 +360,85 @@ function drawMainChart() {
   if (!comps.length) { $("chart-main").innerHTML = ""; $("unit-main").textContent = ""; return; }
   drawLines("chart-main", comps, { normalize: $("normalize").checked });
 }
-function drawAllCharts() { drawMainChart(); drawHealthChart(); drawPyramid(); drawUttak(); drawTrofi(); }
+// Pil + procentuell förändring mellan två värden (för trendkolumnerna)
+function trendArrow(from, to) {
+  if (from <= 1e-9 && to <= 1e-9) return `<span class="tr-flat">–</span>`;
+  const ch = from > 1e-9 ? (to - from) / from : 1;   // relativ förändring
+  const pct = (ch * 100);
+  const txt = (pct >= 0 ? "+" : "") + pct.toFixed(0) + " %";
+  if (ch > 0.05) return `<span class="tr-up">▲ ${txt}</span>`;
+  if (ch < -0.05) return `<span class="tr-down">▼ ${txt}</span>`;
+  return `<span class="tr-flat">→ ${txt}</span>`;
+}
+
+// Årsmedel av en serie kring ett givet år (dämpar säsongssvängningen)
+function annMean(arr, t, year) {
+  let sum = 0, n = 0;
+  for (let i = 0; i < t.length; i++) {
+    if (t[i] >= year - 0.5 && t[i] <= year + 0.5) { sum += arr[i]; n++; }
+  }
+  if (n) return sum / n;
+  let bi = 0, bd = Infinity;                     // fallback: närmaste punkt
+  for (let i = 0; i < t.length; i++) { const d = Math.abs(t[i] - year); if (d < bd) { bd = d; bi = i; } }
+  return arr[bi];
+}
+
+// Sammanställning under grafen: biomassa, andel, kort/lång sikt, % av idag.
+// Alla värden är ÅRSMEDEL (annars stör säsongssvängningen jämförelserna).
+function drawBiomassTable() {
+  const el = $("biomass-table");
+  if (!el || !RES) return;
+  const s = RES.series[selectedZone], t = RES.t;
+  const yEnd = t[t.length - 1];
+  const yNow = t[ti];
+  const yShort = Math.min(5, yEnd);              // "kort sikt" ≈ 5 år
+  const M = (c, y) => Math.max(0, annMean(s[c], t, y));
+  // "Idag" = medel över hela första året (annars stör spinup/säsong)
+  const M0 = (c) => {
+    let sum = 0, n = 0;
+    for (let i = 0; i < t.length; i++) { if (t[i] <= 1.0) { sum += s[c][i]; n++; } }
+    return n ? Math.max(0, sum / n) : M(c, 0);
+  };
+
+  let totNow = 0;
+  BIOMASS.forEach(c => { totNow += M(c, yNow); });
+
+  const row = (namn, col, start, now, sh, end) => {
+    const andel = totNow > 0 ? (now / totNow * 100) : 0;
+    // % av idag: skydda mot division med nära-noll (frånvarande art idag)
+    const mot = start > 0.02 ? (now / start * 100) : null;
+    const motCls = mot == null ? "" : (mot >= 100 ? "pos" : "neg");
+    const motTxt = mot == null ? (now > 0.02 ? "ny" : "–") : mot.toFixed(0) + " %";
+    const dot = col ? `<span class="dot" style="background:${col}"></span>` : "";
+    return `<tr>
+      <td>${dot}${namn}</td>
+      <td>${now.toFixed(2)}</td>
+      <td>${andel.toFixed(1)} %</td>
+      <td>${trendArrow(start, sh)}</td>
+      <td>${trendArrow(start, end)}</td>
+      <td class="${motCls}">${motTxt}</td></tr>`;
+  };
+
+  let rows = BIOMASS.map(c =>
+    row(RES.display[c], COL[c], M0(c), M(c, yNow), M(c, yShort), M(c, yEnd))).join("");
+  // Totalrad
+  let tStart = 0, tShort = 0, tEnd = 0;
+  BIOMASS.forEach(c => { tStart += M0(c); tShort += M(c, yShort); tEnd += M(c, yEnd); });
+  rows += `<tr class="tot-row">` + row(T("total_col","Totalt"), null, tStart, totNow, tShort, tEnd).slice(4);
+
+  el.innerHTML = `<table class="biomass-tbl">
+    <thead><tr>
+      <th>${T("arter","Art")}</th>
+      <th>${T("biomassa_col","Biomassa")}</th>
+      <th>${T("share_col","Andel")}</th>
+      <th>${T("short_term","Kort sikt")}</th>
+      <th>${T("long_term","Lång sikt")}</th>
+      <th>${T("vs_today","% av idag")}</th>
+    </tr></thead><tbody>${rows}</tbody></table>
+    <div class="hint">${T("biomass_hint","Årsmedelvärden vid markörens år. Kort sikt ≈ 5 år, lång sikt = hela förloppet, jämfört med idag (100 % = som idag).")}</div>`;
+}
+
+function drawAllCharts() { drawMainChart(); drawHealthChart(); drawBiomassTable(); drawPyramid(); drawUttak(); drawTrofi(); }
 
 // Klick i grafen → sätt tidslinjen till klickat år (kartan/regionerna följer med)
 function chartSeek(e) {
@@ -485,7 +563,7 @@ function drawTrofi() {
 function selectZone(z) {
   selectedZone = z;
   $("zone-name").textContent = RES ? RES.zone_names[z] : z;
-  if (RES) { drawMainChart(); drawHealthChart(); updateMap(); }
+  if (RES) { drawMainChart(); drawHealthChart(); drawBiomassTable(); updateMap(); }
 }
 
 // ---- Tidslinje ----
@@ -493,7 +571,7 @@ function setTime(i) {
   ti = Math.max(0, Math.min(RES.t.length-1, i|0));
   $("time").value = ti;
   $("time-label").textContent = "år " + (BASE_YEAR + RES.t[ti]).toFixed(0);
-  updateMap(); moveCursors();
+  updateMap(); moveCursors(); drawBiomassTable();
 }
 function play() {
   playing = !playing;

@@ -46,6 +46,7 @@
   "health_title": "Ekosystemets hälsa",
   "zone": "Zon",
   "click_zone": "Klicka på en zon i kartan",
+  "pie_legend": "Tårtbitar = art, siffran i mitten = total biomassa",
   "watercolumn": "Vattenpelare (syre, % mättnad)",
   "charts_choose": "Grafer — välj vad som visas",
   "preset_plankton": "Plankton",

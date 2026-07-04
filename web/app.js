@@ -18,6 +18,7 @@ const ADJ = [
 ];
 
 const LAYERS = [
+  { key: "pie",   label: "Tårtdiagram (biomassa)", type: "pie" },
   { key: "status", label: "Bottenstatus", type: "status" },
   { key: "O2b",   label: "Bottensyre",    type: "cont", cmap: "oxy" },
   { key: "O2",    label: "Ytsyre",        type: "cont", cmap: "oxy" },
@@ -52,6 +53,8 @@ const COL = {
 // Färgpalett för uttag och trofinivåer
 const UCOL = { fiske:"#ff6b6b", sal:"#c084fc", skarv:"#e879f9", atervinning:"#4ade80" };
 const TROFI_COL = ["#9fb3c8","#4ade80","#33c2c2","#4ea8ff","#a3e635","#ff6b6b","#e879f9","#8aa9c4"];
+// Levande biomassa som visas i kartans tårtdiagram (uteslut näring/syre/detritus)
+const BIOMASS = ["phyto","cyano","zoo","bentos","sill","skarpsill","spigg","abborre","gadda","torsk","lax","fagel","sal"];
 
 const PRESETS = {
   plankton: ["N","phyto","cyano","zoo"],
@@ -143,50 +146,104 @@ function statusColor(o2b) {
   return "#ff5252";
 }
 
+// Radien för en zon (djupa bassänger något större)
+function zoneR(z) { return z.has_deep_basin ? 11 : 8.5; }
+// Punkt på cirkeln vid vinkel a (radianer, 0 = uppåt)
+function polar(cx, cy, r, a) { return [cx + r*Math.sin(a), cy - r*Math.cos(a)]; }
+
 function buildMap() {
   const svg = $("map");
-  svg.innerHTML = "";
-  const ns = "http://www.w3.org/2000/svg";
-  const pos = {};
-  DEF.zones.forEach(z => pos[z.key] = z);
-  ADJ.forEach(([a,b]) => {
-    const l = document.createElementNS(ns, "line");
-    l.setAttribute("x1", pos[a].x); l.setAttribute("y1", pos[a].y);
-    l.setAttribute("x2", pos[b].x); l.setAttribute("y2", pos[b].y);
-    l.setAttribute("stroke", "#1e4260"); l.setAttribute("stroke-width", "0.8");
-    svg.appendChild(l);
+  // Klick delegeras (innehållet byggs om vid varje tidssteg)
+  svg.addEventListener("click", e => {
+    const g = e.target.closest("[data-zone]");
+    if (g) selectZone(g.dataset.zone);
   });
-  DEF.zones.forEach(z => {
-    const r = z.has_deep_basin ? 11 : 8.5;
-    const c = document.createElementNS(ns, "circle");
-    c.setAttribute("cx", z.x); c.setAttribute("cy", z.y); c.setAttribute("r", r);
-    c.setAttribute("class", "zone-blob");
-    c.setAttribute("stroke", "#0a1929"); c.setAttribute("stroke-width", "0.6");
-    c.dataset.zone = z.key;
-    c.addEventListener("click", () => selectZone(z.key));
-    svg.appendChild(c);
-    const t = document.createElementNS(ns, "text");
-    t.setAttribute("x", z.x); t.setAttribute("y", z.y + r + 3);
-    t.setAttribute("class", "zone-label");
-    t.textContent = z.name;
-    svg.appendChild(t);
-  });
+  updateMap();
 }
+
+// Kort talformat: 1234 → "1.2k"
+function shortNum(v) {
+  if (v >= 1000) return (v/1000).toFixed(v >= 10000 ? 0 : 1) + "k";
+  if (v >= 100) return v.toFixed(0);
+  return v.toFixed(v < 10 ? 1 : 0);
+}
+
+// Tårtdiagram för en zon: tårtbitar per art + totalmassa i mitten
+function pieSvg(z) {
+  const s = RES.series[z], zd = DEF.zones.find(x => x.key === z);
+  const cx = zd.x, cy = zd.y, r = zoneR(z);
+  const vals = BIOMASS.map(c => Math.max(0, s[c][ti]));
+  const total = vals.reduce((a, b) => a + b, 0);
+  const sel = z === selectedZone;
+  let out = "";
+  if (total <= 0) {
+    out += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="#0d2135"/>`;
+  } else {
+    let a0 = 0;
+    BIOMASS.forEach((c, k) => {
+      const frac = vals[k] / total;
+      if (frac <= 0) return;
+      const a1 = a0 + frac * 2 * Math.PI;
+      if (frac >= 0.999) {           // en enda art fyller cirkeln
+        out += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${COL[c]}"/>`;
+      } else {
+        const [x0, y0] = polar(cx, cy, r, a0), [x1, y1] = polar(cx, cy, r, a1);
+        const large = (a1 - a0) > Math.PI ? 1 : 0;
+        out += `<path d="M ${cx} ${cy} L ${x0.toFixed(2)} ${y0.toFixed(2)} `
+             + `A ${r} ${r} 0 ${large} 1 ${x1.toFixed(2)} ${y1.toFixed(2)} Z" `
+             + `fill="${COL[c]}"/>`;
+      }
+      a0 = a1;
+    });
+  }
+  // Hål i mitten (munk) + totalsiffra
+  out += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" `
+       + `stroke="${sel ? '#fff' : '#0a1929'}" stroke-width="${sel ? 1.1 : 0.5}"/>`;
+  out += `<circle cx="${cx}" cy="${cy}" r="${r*0.5}" fill="#0d2135" opacity="0.9"/>`;
+  out += `<text x="${cx}" y="${cy+0.9}" class="pie-total">${shortNum(total)}</text>`;
+  out += `<text x="${cx}" y="${cy + r + 3}" class="zone-label">${zd.name}</text>`;
+  return `<g data-zone="${z}" style="cursor:pointer">${out}</g>`;
+}
+
 function updateMap() {
   if (!RES) return;
-  const layer = LAYERS.find(l => l.key === $("layer").value);
+  const layer = LAYERS.find(l => l.key === $("layer").value) || LAYERS[0];
   const svg = $("map");
-  const [lo, hi] = layer.type === "cont" ? layerRange(layer) : [0,0];
-  svg.querySelectorAll(".zone-blob").forEach(blob => {
-    const z = blob.dataset.zone;
-    const v = layerValue(layer, z, ti);
-    let color;
-    if (layer.type === "status") color = statusColor(v);
-    else color = lerpColor(CMAPS[layer.cmap], (v - lo) / (hi - lo || 1));
-    blob.setAttribute("fill", color);
-    blob.classList.toggle("selected", z === selectedZone);
+  const pos = {}; DEF.zones.forEach(z => pos[z.key] = z);
+  let parts = "";
+  // Grannlänkar
+  ADJ.forEach(([a,b]) => {
+    parts += `<line x1="${pos[a].x}" y1="${pos[a].y}" x2="${pos[b].x}" y2="${pos[b].y}" `
+           + `stroke="#1e4260" stroke-width="0.8"/>`;
   });
+  if (layer.type === "pie") {
+    DEF.zones.forEach(z => parts += pieSvg(z.key));
+    svg.innerHTML = parts;
+    drawPieLegend();
+    return;
+  }
+  // Choropleth (enkel färg per zon)
+  const [lo, hi] = layer.type === "cont" ? layerRange(layer) : [0,0];
+  DEF.zones.forEach(z => {
+    const r = zoneR(z);
+    const v = layerValue(layer, z.key, ti);
+    const color = layer.type === "status" ? statusColor(v)
+                : lerpColor(CMAPS[layer.cmap], (v - lo) / (hi - lo || 1));
+    const sel = z.key === selectedZone;
+    parts += `<g data-zone="${z.key}" style="cursor:pointer">`
+           + `<circle cx="${z.x}" cy="${z.y}" r="${r}" fill="${color}" `
+           + `stroke="${sel ? '#fff' : '#0a1929'}" stroke-width="${sel ? 1.4 : 0.6}"/>`
+           + `<text x="${z.x}" y="${z.y + r + 3}" class="zone-label">${z.name}</text></g>`;
+  });
+  svg.innerHTML = parts;
   drawLegend(layer, lo, hi);
+}
+
+// Färgnyckel för tårtdiagrammens arter
+function drawPieLegend() {
+  $("legend").innerHTML =
+    `<span style="width:100%;color:var(--muted)">${T("pie_legend","Tårtbitar = art, siffran i mitten = total biomassa")}</span>` +
+    BIOMASS.map(c => `<span><span class="swatch" style="background:${COL[c]}"></span>${RES.display[c]}</span>`).join("");
 }
 function drawLegend(layer, lo, hi) {
   const el = $("legend");
@@ -1022,7 +1079,7 @@ async function init() {
 
   const lay = $("layer");
   LAYERS.forEach(l => lay.innerHTML += `<option value="${l.key}">${l.label}</option>`);
-  lay.value = "status";
+  lay.value = "pie";
   lay.addEventListener("change", updateMap);
 
   document.querySelectorAll('#view-sim input[type=range]').forEach(r =>

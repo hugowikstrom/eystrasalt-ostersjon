@@ -619,11 +619,31 @@ async function aiScenario() {
     });
     const p = await r.json();
     setSliders(p);
-    $("ai-motiv").textContent = p.motivering || "";
+    const motiv = p.motivering ? `<div>${mdToHtml(p.motivering)}</div>` : "";
+    $("ai-motiv").innerHTML = motiv + scenarioSettingsHtml(readParams());
     $("scenario").value = "";
     await run(readParams());
   } catch (e) { $("ai-motiv").textContent = "AI-fel: " + e; }
   $("ai-run").disabled = false;
+}
+
+// Kompakt sammanställning av de inställningar AI:n satte (så man ser vad som gäller)
+function scenarioSettingsHtml(p) {
+  const disp = (DEF && DEF.display) || {};
+  const f = p.fishing || {};
+  const items = [
+    [T("warming","Uppvärmning"), (+p.temp_delta).toFixed(1) + " °C"],
+    [T("nutrient","Näring"), "×" + (+p.nutrient_load).toFixed(1)],
+    [T("salinity","Salthalt"), (+p.salinity_delta).toFixed(1) + " PSU"],
+    [T("seal_hunt","Säljakt"), (+p.seal_hunt).toFixed(1)],
+    [T("bird_hunt","Skarv-/fågeljakt"), (+p.bird_hunt).toFixed(1)],
+    [T("noise","Brus"), (+p.noise).toFixed(1)],
+    [T("years","Antal år"), p.years],
+  ].map(([k, v]) => `<b>${k}:</b> ${v}`).join(" · ");
+  const fish = ["sill","skarpsill","spigg","abborre","gadda","torsk","lax"]
+    .filter(k => f[k] != null)
+    .map(k => `${disp[k] || k} ${(+f[k]).toFixed(2)}`).join(", ");
+  return `<div class="ai-settings">⚙️ ${items}<br><b>${T("fishing_pressure","Fisketryck")}:</b> ${fish}</div>`;
 }
 async function explain() {
   if (!RES) return;

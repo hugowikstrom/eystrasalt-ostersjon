@@ -440,7 +440,7 @@ function drawBiomassTable() {
     <div class="hint">${T("biomass_hint","3-årsmedelvärden (dämpar säsongs- och flerårssvängningar). Kort sikt ≈ 5 år, lång sikt = hela förloppet, jämfört med idag (100 % = som idag).")}</div>`;
 }
 
-function drawAllCharts() { drawMainChart(); drawHealthChart(); drawBiomassTable(); drawPyramid(); drawUttak(); drawTrofi(); }
+function drawAllCharts() { drawMainChart(); drawHealthChart(); drawBiomassTable(); drawCatchWeight(); drawPyramid(); drawUttak(); drawTrofi(); }
 
 // Klick i grafen → sätt tidslinjen till klickat år (kartan/regionerna följer med)
 function chartSeek(e) {
@@ -539,6 +539,52 @@ function multiLine(id, years, series, opts) {
 }
 function legendHtml(items) {
   return items.map(i => `<span><span class="swatch" style="background:${i.color}"></span>${i.label}</span>`).join("");
+}
+
+// Parallell graf: total biomassa (vikt) vs fångst över tid, med dubbla y-axlar
+function drawCatchWeight() {
+  const el = $("chart-catch");
+  if (!el || !RES || !RES.uttak) return;
+  const u = RES.uttak, t = RES.t, years = u.years, n = years.length;
+  // Total biomassa (vikt) hela havet — årsmedel vid varje uttag-år
+  const vikt = years.map(yr => {
+    let sum = 0, cnt = 0;
+    for (let i = 0; i < t.length; i++) {
+      if (t[i] >= yr - 0.5 && t[i] <= yr + 0.5) {
+        let s = 0; BIOMASS.forEach(c => s += Math.max(0, RES.totals[c][i]));
+        sum += s; cnt++;
+      }
+    }
+    return cnt ? sum / cnt : 0;
+  });
+  const fangst = u.fiske;
+  const W = 720, H = 200, ml = 46, mr = 48, mt = 10, mb = 22;
+  const xmax = years[n - 1] || 1;
+  const maxV = Math.max(...vikt, 1e-9) * 1.1, maxF = Math.max(...fangst, 1e-9) * 1.1;
+  const X = x => ml + (x / xmax) * (W - ml - mr);
+  const YV = y => mt + (1 - y / maxV) * (H - mt - mb);
+  const YF = y => mt + (1 - y / maxF) * (H - mt - mb);
+  const cV = "#4ea8ff", cF = UCOL.fiske;         // vikt = blå, fångst = röd
+  let svg = `<svg viewBox="0 0 ${W} ${H}">`;
+  for (let k = 0; k <= 2; k++) {
+    const yy = maxV * k / 2, ff = maxF * k / 2;
+    svg += `<line class="gridline" x1="${ml}" y1="${YV(yy)}" x2="${W - mr}" y2="${YV(yy)}"/>`;
+    svg += `<text class="axis-label" x="2" y="${YV(yy) + 3}" fill="${cV}">${yy.toFixed(0)}</text>`;
+    svg += `<text class="axis-label" x="${W - mr + 4}" y="${YF(ff) + 3}" fill="${cF}">${ff.toFixed(ff < 10 ? 1 : 0)}</text>`;
+  }
+  for (let k = 0; k <= 5; k++) {
+    const xx = xmax * k / 5;
+    svg += `<text class="axis-label" x="${X(xx) - 8}" y="${H - 6}">${(BASE_YEAR + xx).toFixed(0)}</text>`;
+  }
+  const poly = (data, Yf, col) => {
+    let pts = ""; for (let i = 0; i < n; i++) pts += `${X(years[i]).toFixed(1)},${Yf(data[i]).toFixed(1)} `;
+    return `<polyline points="${pts}" fill="none" stroke="${col}" stroke-width="1.8"/>`;
+  };
+  el.innerHTML = svg + poly(vikt, YV, cV) + poly(fangst, YF, cF) + `</svg>`;
+  $("catch-legend").innerHTML =
+    `<span><span class="swatch" style="background:${cV}"></span>${T("weight_series", "Total biomassa (vikt) — vänster axel")}</span>`
+    + `<span><span class="swatch" style="background:${cF}"></span>${T("catch_series", "Fångst/fiske per år — höger axel")}</span>`
+    + `<span class="band">${T("unit_rel_yr", "enhet: relativt biomassaindex (vikt) resp. /år (fångst)")}</span>`;
 }
 
 function drawUttak() {

@@ -141,7 +141,10 @@
         <span class="hint" data-i18n="click_zone">Klicka på en zon i kartan</span>
       </div>
 
-      <h3 data-i18n="charts_choose">Grafer — välj vad som visas</h3>
+      <h3><span data-i18n="health_title">Ekosystemets hälsa</span> <span class="unit-note" data-i18n="unit_index">(index 0–100)</span> <span class="help" data-k="health"></span></h3>
+      <div class="chart" id="chart-health"></div>
+
+      <h3><span data-i18n="charts_choose">Grafer — välj vad som visas</span> <span class="unit-note" data-i18n="unit_rel">(enhet: relativt biomassaindex)</span></h3>
       <div class="presets">
         <button data-preset="plankton" data-i18n="preset_plankton">Plankton</button>
         <button data-preset="fisk" data-i18n="preset_fish">Fisk</button>
@@ -159,11 +162,12 @@
       </div>
       <div class="unit-label" id="unit-main"></div>
 
-      <h3 data-i18n="biomass_summary">Biomassa & fördelning (vald zon)</h3>
-      <div class="table-wrap"><div id="biomass-table"></div></div>
+      <h3><span data-i18n="catch_weight_title">Fångst & biomassa (vikt) över tid</span> <span class="help" data-k="catch_weight"></span></h3>
+      <div class="chart" id="chart-catch"></div>
+      <div id="catch-legend" class="legend"></div>
 
-      <h3><span data-i18n="health_title">Ekosystemets hälsa</span> <span class="help" data-k="health"></span></h3>
-      <div class="chart" id="chart-health"></div>
+      <h3><span data-i18n="biomass_summary">Biomassa & fördelning (vald zon)</span> <span class="unit-note" data-i18n="unit_rel">(enhet: relativt biomassaindex)</span></h3>
+      <div class="table-wrap"><div id="biomass-table"></div></div>
 
       <h2 data-i18n="ecolog_interpret">🤖 Ekologens tolkning</h2>
       <button id="explain" data-i18n="explain_btn">Förklara resultatet</button>

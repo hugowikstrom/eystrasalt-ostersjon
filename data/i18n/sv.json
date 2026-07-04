@@ -22,6 +22,7 @@
   "active_user": "Aktiv användare",
   "no_user": "Ingen användare vald — dina serverkörningar sparas öppet.",
   "scenario": "Scenario",
+  "custom_scenario": "— eget —",
   "stress": "Stress-reglage",
   "warming": "Klimatuppvärmning",
   "nutrient": "Näringsbelastning",

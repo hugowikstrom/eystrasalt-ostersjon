@@ -686,12 +686,19 @@ function syncLabels() {
   $("v-f-lax").textContent = $("f-lax").value;
 }
 
+// Nollställ scenario-slidern till "— eget —" (när man skruvar reglagen själv).
+function scenarioToCustom() {
+  const s = $("scenario"); if (s) s.value = 0;
+  $("v-scenario").textContent = T("custom_scenario", "— eget —");
+  $("scenario-desc").textContent = "";
+}
+
 // ---- Auto-kör: kör simuleringen strax efter att man ändrat ett reglage ----
 let _autoTimer = null;
 function autoRun() {
   clearTimeout(_autoTimer);
   _autoTimer = setTimeout(() => {
-    $("scenario").value = "";        // egna reglage, inte ett förval
+    scenarioToCustom();              // egna reglage, inte ett förval
     run(readParams());
   }, 300);                            // vänta tills man släpper/pausar draget
 }
@@ -783,7 +790,7 @@ async function aiScenario() {
     setSliders(p);
     const motiv = p.motivering ? `<div>${mdToHtml(p.motivering)}</div>` : "";
     $("ai-motiv").innerHTML = motiv + scenarioSettingsHtml(readParams());
-    $("scenario").value = "";
+    scenarioToCustom();
     await run(readParams());
   } catch (e) { $("ai-motiv").textContent = "AI-fel: " + e; }
   $("ai-run").disabled = false;
@@ -1231,7 +1238,7 @@ function applyStrategy(key) {
   };
   setSliders(p);
   activateTab("sim");
-  $("scenario").value = "";
+  scenarioToCustom();
   $("status").textContent = `Laddar in strategin "${strat.namn}"…`;
   run(p);
 }
@@ -1256,13 +1263,17 @@ async function init() {
   buildTooltips();
   initTabs();
 
+  // Scenario är nu ett stress-reglage (slider): position 0 = eget, 1..N = förval.
   const sc = $("scenario");
-  sc.innerHTML = `<option value="">— eget (reglagen nedan) —</option>`;
-  DEF.scenarios.forEach(s => sc.innerHTML += `<option value="${s.key}">${s.namn}</option>`);
-  sc.addEventListener("change", () => {
-    const s = DEF.scenarios.find(x => x.key === sc.value);
-    $("scenario-desc").textContent = s ? s.beskrivning : "";
-    if (sc.value) run({ scenario: sc.value, years: +$("years").value });
+  sc.max = DEF.scenarios.length;
+  sc.addEventListener("input", () => {
+    const i = +sc.value;
+    if (i === 0) { scenarioToCustom(); run(readParams()); return; }
+    const s = DEF.scenarios[i - 1];
+    $("v-scenario").textContent = s.namn;
+    $("scenario-desc").textContent = s.beskrivning;
+    setSliders(s.reglage);      // scenariot ställer in de andra stress-reglagen
+    run(readParams());          // kör med scenariots reglagevärden
   });
 
   const lay = $("layer");
@@ -1270,15 +1281,16 @@ async function init() {
   lay.value = "pie";
   lay.addEventListener("change", updateMap);
 
-  document.querySelectorAll('#view-sim input[type=range]').forEach(r =>
+  // #scenario har egen hanterare (ovan) — uteslut den ur de generiska lyssnarna.
+  document.querySelectorAll('#view-sim input[type=range]:not(#scenario)').forEach(r =>
     r.addEventListener("input", syncLabels));
   // Auto-kör när något stress-/fiskereglage ändras (interaktivt, ingen AI).
   // #time (tidslinjen) ligger utanför .controls och triggar inte omkörning.
-  document.querySelectorAll('.controls input[type=range]').forEach(r =>
+  document.querySelectorAll('.controls input[type=range]:not(#scenario)').forEach(r =>
     r.addEventListener("input", autoRun));
   syncLabels();
 
-  $("run").addEventListener("click", () => { $("scenario").value = ""; run(); });
+  $("run").addEventListener("click", () => { scenarioToCustom(); run(); });
   $("play").addEventListener("click", play);
   $("time").addEventListener("input", e => { if (RES) setTime(+e.target.value); });
   // Klick i huvudgrafen → hoppa till det året (kartan/regionerna uppdateras)

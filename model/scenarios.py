@@ -71,7 +71,19 @@ def get_scenario(key, years=30):
     return sc["params"](years)
 
 
+def _reglage(p: EcoParams):
+    """Scenariots värden i samma form som webbens stress-reglage läser (readParams)."""
+    return {
+        "years": p.years, "temp_delta": p.temp_delta,
+        "nutrient_load": p.nutrient_load, "salinity_delta": p.salinity_delta,
+        "seal_hunt": p.seal_hunt, "bird_hunt": p.bird_hunt, "noise": p.noise,
+        "fishing": dict(p.fishing),
+    }
+
+
 def list_scenarios():
-    """Metadata för webbens scenario-meny."""
-    return [{"key": k, "namn": v["namn"], "beskrivning": v["beskrivning"]}
+    """Metadata för webbens scenario-meny. Inkluderar 'reglage' så att ett scenario
+    kan sättas som stress-reglage i webben (och sedan finjusteras vidare)."""
+    return [{"key": k, "namn": v["namn"], "beskrivning": v["beskrivning"],
+             "reglage": _reglage(v["params"](30))}
             for k, v in SCENARIOS.items()]

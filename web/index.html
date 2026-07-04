@@ -46,11 +46,12 @@
   <!-- ============ FLIK: SIMULERING ============ -->
   <main class="view active" id="view-sim">
     <aside class="panel controls">
-      <h2><span data-i18n="scenario">Scenario</span> <span class="help" data-k="scenario"></span></h2>
-      <select id="scenario"></select>
-      <p id="scenario-desc" class="hint"></p>
-
       <h2 data-i18n="stress">Stress-reglage</h2>
+      <div class="slider">
+        <label><span data-i18n="scenario">Scenario</span> <span class="val" id="v-scenario">— eget —</span> <span class="help" data-k="scenario"></span></label>
+        <input type="range" id="scenario" min="0" max="0" step="1" value="0">
+      </div>
+      <p id="scenario-desc" class="hint"></p>
       <div class="slider">
         <label><span data-i18n="warming">Klimatuppvärmning</span> <span class="val" id="v-temp">0</span> °C <span class="help" data-k="temp_delta"></span></label>
         <input type="range" id="temp_delta" min="-2" max="8" step="0.5" value="0">

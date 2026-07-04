@@ -362,6 +362,28 @@ function drawMainChart() {
 }
 function drawAllCharts() { drawMainChart(); drawHealthChart(); drawPyramid(); drawUttak(); drawTrofi(); }
 
+// Klick i grafen → sätt tidslinjen till klickat år (kartan/regionerna följer med)
+function chartSeek(e) {
+  if (!RES) return;
+  const svg = $("chart-main").querySelector("svg");
+  if (!svg || !svg.getScreenCTM) return;
+  const pt = svg.createSVGPoint();
+  pt.x = e.clientX; pt.y = e.clientY;
+  const p = pt.matrixTransform(svg.getScreenCTM().inverse());  // → viewBox-koord (0..360)
+  const W = 360, ml = 34, mr = 8;
+  const xmax = RES.t[RES.t.length - 1];
+  let xdata = (p.x - ml) / (W - ml - mr) * xmax;
+  xdata = Math.max(0, Math.min(xmax, xdata));
+  // närmaste tidsindex
+  let best = 0, bd = Infinity;
+  for (let i = 0; i < RES.t.length; i++) {
+    const d = Math.abs(RES.t[i] - xdata);
+    if (d < bd) { bd = d; best = i; }
+  }
+  if (playing) play();   // pausa ev. uppspelning
+  setTime(best);
+}
+
 function moveCursors() {
   const svg = $("chart-main").querySelector("svg");
   if (!svg) return;
@@ -1114,6 +1136,8 @@ async function init() {
   $("run").addEventListener("click", () => { $("scenario").value = ""; run(); });
   $("play").addEventListener("click", play);
   $("time").addEventListener("input", e => { if (RES) setTime(+e.target.value); });
+  // Klick i huvudgrafen → hoppa till det året (kartan/regionerna uppdateras)
+  $("chart-main").addEventListener("click", chartSeek);
   $("ai-run").addEventListener("click", aiScenario);
   $("explain").addEventListener("click", explain);
   $("save-server").addEventListener("click", saveServer);

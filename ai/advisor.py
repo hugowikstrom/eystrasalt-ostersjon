@@ -83,16 +83,52 @@ SCENARIO_SCHEMA = {
 }
 
 
+_CLIENT = None  # återanvänds mellan anrop (skapa inte en ny klient varje gång)
+
+
 def _client():
-    """Skapar en Claude-klient, eller None om nyckel saknas."""
+    """Returnerar en (cachad) Claude-klient, eller None om nyckel saknas."""
+    global _CLIENT
+    if _CLIENT is not None:
+        return _CLIENT
     key = os.environ.get("ANTHROPIC_API_KEY")
     if not key:
         return None
     try:
         import anthropic
-        return anthropic.Anthropic(api_key=key)
+        _CLIENT = anthropic.Anthropic(api_key=key)
     except Exception:
-        return None
+        _CLIENT = None
+    return _CLIENT
+
+
+# --- Svarscache på app-nivå --------------------------------------------------
+# Identiska AI-förfrågningar återanvänds istället för att debiteras igen. Svaret
+# blir detsamma, så det är korrekt. Nyckeln inkluderar rapport-kontexten, så att
+# svaren uppdateras när användaren lägger till/tar bort underlag. (Detta är den
+# verksamma cachningen här — Anthropics prompt-cache biter inte eftersom system-
+# prompten är kortare än Haikus minsta cachebara längd på 2048 tokens.)
+import hashlib
+
+_RESP_CACHE = {}
+_RESP_CACHE_MAX = 256
+
+
+def _cache_key(*parts):
+    raw = json.dumps(parts, ensure_ascii=False, sort_keys=True, default=str)
+    ctx = reports.reports_text() or ""
+    return hashlib.sha1((raw + "\x00" + ctx).encode("utf-8")).hexdigest()
+
+
+def _cache_get(key):
+    return _RESP_CACHE.get(key)
+
+
+def _cache_put(key, val):
+    if len(_RESP_CACHE) >= _RESP_CACHE_MAX:
+        _RESP_CACHE.pop(next(iter(_RESP_CACHE)))   # enkel FIFO-utrensning
+    _RESP_CACHE[key] = val
+    return val
 
 
 def _system_blocks(with_reports=True):
@@ -133,6 +169,11 @@ def parse_scenario(text, current=None):
         base["motivering"] = "AI ej tillgänglig (saknar API-nyckel) — använder baslinje."
         return base
 
+    ckey = _cache_key("scenario", text, base)
+    hit = _cache_get(ckey)
+    if hit is not None:
+        return hit
+
     prompt = (f"Nuvarande inställningar: {json.dumps(base, ensure_ascii=False)}\n\n"
               f"Användarens önskemål: \"{text}\"\n\n"
               "Uppdatera parametrarna så att de speglar önskemålet. Behåll värden som "
@@ -146,7 +187,7 @@ def parse_scenario(text, current=None):
             output_config={"format": {"type": "json_schema", "schema": SCENARIO_SCHEMA}},
         )
         text_out = next(b.text for b in resp.content if b.type == "text")
-        return json.loads(text_out)
+        return _cache_put(ckey, json.loads(text_out))
     except Exception as e:
         base["motivering"] = f"AI-fel ({type(e).__name__}) — använder baslinje."
         return base
@@ -160,6 +201,11 @@ def explain_result(summary):
     client = _client()
     if client is None:
         return "AI ej tillgänglig — lägg en API-nyckel i .env för att få tolkningar."
+
+    ckey = _cache_key("explain", summary)
+    hit = _cache_get(ckey)
+    if hit is not None:
+        return hit
 
     prompt = (
         "Här är resultatet av en Östersjö-simulering (totala biomassor vid start och slut, "
@@ -175,7 +221,7 @@ def explain_result(summary):
             system=_system_blocks(),
             messages=[{"role": "user", "content": prompt}],
         )
-        return next(b.text for b in resp.content if b.type == "text").strip()
+        return _cache_put(ckey, next(b.text for b in resp.content if b.type == "text").strip())
     except Exception as e:
         return f"Kunde inte hämta AI-förklaring ({type(e).__name__})."
 
@@ -192,6 +238,11 @@ def suggest_research(sensitivity, best=None):
                          for s in sensitivity[:5])
         return ("AI ej tillgänglig. Baserat på känslighetsanalysen bör forskning "
                 "prioriteras där osäkerheten styr utfallet mest:\n" + rows)
+
+    ckey = _cache_key("research", sensitivity, best)
+    hit = _cache_get(ckey)
+    if hit is not None:
+        return hit
 
     prompt = (
         "Nedan är en känslighetsanalys från en Monte Carlo-körning av en Östersjö-modell. "
@@ -210,7 +261,7 @@ def suggest_research(sensitivity, best=None):
             system=_system_blocks(),
             messages=[{"role": "user", "content": prompt}],
         )
-        return next(b.text for b in resp.content if b.type == "text").strip()
+        return _cache_put(ckey, next(b.text for b in resp.content if b.type == "text").strip())
     except Exception as e:
         return f"Kunde inte hämta forskningsförslag ({type(e).__name__})."
 
@@ -228,6 +279,11 @@ def suggest_reports(sensitivity=None):
         return ("AI ej tillgänglig. Klassiska underlag att lägga in: HELCOM State of the "
                 "Baltic Sea, ICES WGBFAS (torsk/sill/skarpsill), Conley et al. 2009 (hypoxi), "
                 "Casini et al. (regimskifte), Eklöf/Bergström (spigg vs abborre/gädda).")
+    ckey = _cache_key("suggest_reports", sensitivity, have_titles)
+    hit = _cache_get(ckey)
+    if hit is not None:
+        return hit
+
     prompt = (
         "Föreslå på svenska 4–6 konkreta rapporter/dataset/studier som skulle förbättra "
         "den här Östersjö-simuleringens förankring — särskilt kring de största "
@@ -241,7 +297,7 @@ def suggest_reports(sensitivity=None):
             model=MODEL, max_tokens=700, system=_system_blocks(),
             messages=[{"role": "user", "content": prompt}],
         )
-        return next(b.text for b in resp.content if b.type == "text").strip()
+        return _cache_put(ckey, next(b.text for b in resp.content if b.type == "text").strip())
     except Exception as e:
         return f"Kunde inte hämta rapportförslag ({type(e).__name__})."
 
@@ -254,6 +310,10 @@ def report_text(summary, lang_name="svenska"):
     client = _client()
     if client is None:
         return None
+    ckey = _cache_key("report_text", lang_name, summary)
+    hit = _cache_get(ckey)
+    if hit is not None:
+        return hit
     prompt = (
         f"Skriv på {lang_name} en kort, professionell rapport (rubriker + 4–6 stycken) om "
         "resultatet av en Östersjö-ekosystemsimulering. Ta upp: utgångsläge, vald strategi och "
@@ -266,7 +326,7 @@ def report_text(summary, lang_name="svenska"):
             model=MODEL, max_tokens=1200, system=_system_blocks(with_reports=True),
             messages=[{"role": "user", "content": prompt}],
         )
-        return next(b.text for b in resp.content if b.type == "text").strip()
+        return _cache_put(ckey, next(b.text for b in resp.content if b.type == "text").strip())
     except Exception:
         return None
 

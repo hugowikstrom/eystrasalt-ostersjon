@@ -32,7 +32,7 @@ header h1 { margin: 0; font-size: 1.6rem; letter-spacing: 0.5px; }
 
 main {
   display: grid;
-  grid-template-columns: 300px 1fr 380px;
+  grid-template-columns: 290px 1fr 480px;
   gap: 16px;
   padding: 16px 28px 40px;
   align-items: start;
@@ -132,7 +132,7 @@ button:disabled { opacity: 0.5; cursor: wait; }
 /* Grafer */
 .charts-area .col-head { display: flex; justify-content: space-between; align-items: baseline; }
 #zone-name { color: var(--text); }
-.chart { width: 100%; height: 130px; }
+.chart { width: 100%; height: 210px; }
 .chart svg { width: 100%; height: 100%; }
 .axis { stroke: var(--line); stroke-width: 0.5; }
 .gridline { stroke: var(--line); stroke-width: 0.3; opacity: 0.5; }
@@ -159,7 +159,7 @@ button:disabled { opacity: 0.5; cursor: wait; }
 
 .view { display: none; }
 .view.active { display: grid; }
-main.view.active { grid-template-columns: 300px 1fr 380px; gap: 16px;
+main.view.active { grid-template-columns: 290px 1fr 480px; gap: 16px;
   padding: 16px 28px 40px; align-items: start; }
 section.view.active { grid-template-columns: 1fr; gap: 16px; padding: 16px 28px 40px; }
 .panel.wide { max-width: 1100px; }
@@ -285,7 +285,9 @@ input[type=text] { width: 100%; background: var(--panel2); color: var(--text);
 .cycle-note { color: var(--muted); font-size: 0.85rem; margin-top: 8px;
   background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
 #chart-uttak svg, #chart-trofi svg { width: 100%; height: 100%; }
-#chart-uttak, #chart-trofi { width: 100%; height: 210px; }
+#chart-uttak, #chart-trofi { width: 100%; height: 320px; }
+#chart-main { height: 280px; }        /* huvudgrafen störst */
+#chart-health { height: 190px; }
 
 /* ---- Export ---- */
 .export-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 10px 0; }

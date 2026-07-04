@@ -211,6 +211,8 @@ tr.best-row td { background: rgba(74,222,128,0.12); }
 tr.strat-row { cursor: pointer; transition: background 0.12s; }
 tr.strat-row:hover td { background: rgba(78,168,255,0.14); }
 td.load-cell { color: var(--accent); font-weight: 600; white-space: nowrap; font-size: 0.8rem; }
+td.today-cell { background: rgba(138,169,196,0.10); color: var(--muted); }
+td.today-cell b { color: var(--text); }
 td.pos { color: var(--good); } td.neg { color: var(--bad); }
 .band { color: var(--muted); font-size: 0.78rem; }
 

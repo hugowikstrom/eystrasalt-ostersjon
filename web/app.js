@@ -677,12 +677,15 @@ function renderMC() {
     + `${best.halsa[H[H.length-1]].mean}/100 vid ${H[H.length-1]} år.`
     + `<div class="hint" style="margin-top:6px">👉 ${T("mc_click_hint","Klicka på en strategi i tabellen för att ladda in dess värden i simuleringen och analysera resultatet.")}</div>`;
 
-  let html = `<thead><tr><th>Strategi</th>`;
+  const dagens = (DEF && DEF.dagens_halsa) ? DEF.dagens_halsa.index : null;
+  let html = `<thead><tr><th>${T("strategy","Strategi")}</th>`
+           + `<th>${T("today_health","Dagens hälsa")}</th>`;
   H.forEach(h => html += `<th>${h} år</th>`);
   html += `<th></th></tr></thead><tbody>`;
   MC.strategier.forEach(st => {
     const row = MC.resultat[st.key];
     html += `<tr class="strat-row" data-strat="${st.key}" title="Klicka för att ladda in i simuleringen"><td>${row.namn}</td>`;
+    html += `<td class="today-cell"><b>${dagens != null ? dagens : "—"}</b></td>`;
     H.forEach(h => {
       const cell = row.halsa[h];
       const isBest = MC.basta[String(h)] === st.key;
@@ -954,12 +957,13 @@ function setUser() {
 }
 
 // ---- Dagens hälsa (baslinjen) ----
+// Visas numera som första kolumn i Monte Carlo-tabellen (se renderMC).
 function renderTodayHealth() {
-  if (!DEF || !DEF.dagens_halsa) return;
+  const el = $("today-health");
+  if (!el || !DEF || !DEF.dagens_halsa) return;
   const v = DEF.dagens_halsa.index;
   const col = v >= 66 ? "var(--good)" : v >= 40 ? "var(--warn)" : "var(--bad)";
-  $("today-health").innerHTML =
-    `🩺 ${T("today_health","Dagens hälsa")}: <b style="color:${col}">${v}/100</b>`;
+  el.innerHTML = `🩺 ${T("today_health","Dagens hälsa")}: <b style="color:${col}">${v}/100</b>`;
 }
 
 // ---- Tala-till-text (webbläsarens Web Speech API, funkar i Chrome) ----

@@ -19,7 +19,7 @@
   "pyramid": "Näringspyramiden visar biomassan på varje nivå, från näringssalter längst ned till toppredatorer (fågel/säl). Allt som dör blir detritus/kadaver som bryts ned till näring igen — kretsloppet sluts.",
   "uttak": "Uttaget visar hur mycket biomassa som tas ur havet per år av fiske (människa), säl och skarv/sjöfågel, samt hur mycket som återvinns via nedbrytning.",
   "ideas": "Idélåda där vem som helst kan lämna förslag, kunskap eller önskemål om simuleringen och Östersjön.",
-  "export": "Skapa ett dokument (enkel webbsida, PowerPoint eller Word-rapport) av senaste körningen, på valt språk och med valfri mottagare.",
+  "export": "Skapa ett dokument (enkel webbsida, PowerPoint eller Word-rapport) av senaste körningen, på valt språk och med valfri mottagare. Word-rapporten och webbsidan följer Havs- och vattenmyndighetens rapportstruktur (titelsida, förord, sammanfattning, innehåll, inledning, metod, resultat, diskussion, slutsatser, referenser, bilaga).",
   "saved": "Spara den aktuella inställningen — lokalt i din webbläsare eller på servern så att den finns kvar och kan delas.",
   "layer": "Vilken variabel kartan färgläggs efter (t.ex. bottensyre, torsk, cyanobakterier). Bottenstatus visar friskt/syrefattigt/dött.",
   "mc_draws": "Antal Monte Carlo-lottningar. Fler lottningar ger säkrare osäkerhetsband men tar längre tid. Varje lottning testar alla strategier i samma lottade 'värld'.",

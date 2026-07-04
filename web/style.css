@@ -117,6 +117,8 @@ button:disabled { opacity: 0.5; cursor: wait; }
 /* Totalbiomassa i tårtdiagrammets mitt */
 .pie-total { fill: #eaf4ff; font-size: 2.6px; text-anchor: middle; pointer-events: none;
   font-weight: 800; paint-order: stroke; stroke: #04121e; stroke-width: 0.4px; }
+.pie-unit { fill: #cfe0ee; font-size: 1.5px; text-anchor: middle; pointer-events: none;
+  paint-order: stroke; stroke: #04121e; stroke-width: 0.35px; }
 
 .timeline { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
 .timeline button { width: 40px; margin: 0; flex: 0 0 auto; }
@@ -126,11 +128,6 @@ button:disabled { opacity: 0.5; cursor: wait; }
 .legend .bar { height: 10px; width: 120px; border-radius: 3px; }
 .legend .swatch { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -2px; margin-right: 4px; }
 .status { margin-top: 10px; color: var(--muted); font-size: 0.85rem; min-height: 1.2em; }
-
-/* Vattenpelare */
-.watercolumn { margin-bottom: 6px; }
-.wc { height: 70px; border-radius: 8px; border: 1px solid var(--line); position: relative; overflow: hidden; }
-.wc-labels { display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
 
 /* Grafer */
 .charts-area .col-head { display: flex; justify-content: space-between; align-items: baseline; }

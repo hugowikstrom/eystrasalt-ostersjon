@@ -167,6 +167,13 @@ function shortNum(v) {
   if (v >= 100) return v.toFixed(0);
   return v.toFixed(v < 10 ? 1 : 0);
 }
+// Kort enhet per kartlager (till värdet som skrivs i varje region)
+function layerUnit(layer) {
+  if (layer.key === "temp") return "°C";
+  if (layer.key === "salinity") return "PSU";
+  if (layer.key === "O2" || layer.key === "O2b") return "%";
+  return "rel.";   // biomassa-index (relativt)
+}
 
 // Tårtdiagram för en zon: tårtbitar per art + totalmassa i mitten
 function pieSvg(z) {
@@ -200,7 +207,8 @@ function pieSvg(z) {
   out += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" `
        + `stroke="${sel ? '#fff' : '#0a1929'}" stroke-width="${sel ? 1.1 : 0.5}"/>`;
   out += `<circle cx="${cx}" cy="${cy}" r="${r*0.5}" fill="#0d2135" opacity="0.9"/>`;
-  out += `<text x="${cx}" y="${cy+0.9}" class="pie-total">${shortNum(total)}</text>`;
+  out += `<text x="${cx}" y="${cy}" class="pie-total">${shortNum(total)}</text>`;
+  out += `<text x="${cx}" y="${cy+2.3}" class="pie-unit">rel.</text>`;
   out += `<text x="${cx}" y="${cy + r + 3}" class="zone-label">${zd.name}</text>`;
   return `<g data-zone="${z}" style="cursor:pointer">${out}</g>`;
 }
@@ -230,9 +238,12 @@ function updateMap() {
     const color = layer.type === "status" ? statusColor(v)
                 : lerpColor(CMAPS[layer.cmap], (v - lo) / (hi - lo || 1));
     const sel = z.key === selectedZone;
+    const unit = layerUnit(layer);
     parts += `<g data-zone="${z.key}" style="cursor:pointer">`
            + `<circle cx="${z.x}" cy="${z.y}" r="${r}" fill="${color}" `
            + `stroke="${sel ? '#fff' : '#0a1929'}" stroke-width="${sel ? 1.4 : 0.6}"/>`
+           + `<text x="${z.x}" y="${z.y+0.2}" class="pie-total">${shortNum(v)}</text>`
+           + `<text x="${z.x}" y="${z.y+2.5}" class="pie-unit">${unit}</text>`
            + `<text x="${z.x}" y="${z.y + r + 3}" class="zone-label">${z.name}</text></g>`;
   });
   svg.innerHTML = parts;
@@ -262,19 +273,6 @@ function drawLegend(layer, lo, hi) {
     <span>${hi.toFixed(1)}${unit}</span>`;
 }
 
-// ---- Vattenpelare ----
-function updateWaterColumn() {
-  if (!RES) return;
-  const s = RES.series[selectedZone];
-  const surf = s.O2[ti], bot = s.O2b[ti];
-  const cTop = statusColor(Math.min(surf, 100));
-  const cBot = statusColor(bot);
-  $("watercolumn").style.background =
-    `linear-gradient(180deg, ${cTop} 0%, ${cTop} 25%, ${cBot} 90%)`;
-  $("watercolumn").innerHTML =
-    `<div style="position:absolute;top:4px;left:8px;font-size:0.75rem;color:#04121e;font-weight:700">${T("surface_oxygen","Ytsyre")} ${surf.toFixed(0)} %</div>
-     <div style="position:absolute;bottom:4px;left:8px;font-size:0.75rem;color:#04121e;font-weight:700">${T("bottom_oxygen","Bottensyre")} ${bot.toFixed(0)} %</div>`;
-}
 
 // ---- Valbara linjediagram (auto-skala + enhet) ----
 function drawLines(id, comps, opts) {
@@ -462,7 +460,7 @@ function drawTrofi() {
 function selectZone(z) {
   selectedZone = z;
   $("zone-name").textContent = RES ? RES.zone_names[z] : z;
-  if (RES) { drawMainChart(); drawHealthChart(); updateWaterColumn(); updateMap(); }
+  if (RES) { drawMainChart(); drawHealthChart(); updateMap(); }
 }
 
 // ---- Tidslinje ----
@@ -470,7 +468,7 @@ function setTime(i) {
   ti = Math.max(0, Math.min(RES.t.length-1, i|0));
   $("time").value = ti;
   $("time-label").textContent = "år " + (BASE_YEAR + RES.t[ti]).toFixed(0);
-  updateMap(); updateWaterColumn(); moveCursors();
+  updateMap(); moveCursors();
 }
 function play() {
   playing = !playing;

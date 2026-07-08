@@ -24,10 +24,10 @@ import json
 
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request, send_file, send_from_directory
-from flask_cors import CORS
 
 load_dotenv()  # läser ANTHROPIC_API_KEY från .env
 
+import security
 from ai import advisor, reports, saved, ideas, exporter, i18n
 from model import scenarios, montecarlo, verification
 from model import species as S
@@ -37,7 +37,7 @@ from model.zones import ZONES
 WEB_DIR = os.path.join(os.path.dirname(__file__), "web")
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 app = Flask(__name__, static_folder=WEB_DIR, static_url_path="")
-CORS(app)
+security.init_security(app)   # CORS-policy, säkerhetsheaders, storleksgräns (se security.py)
 
 
 # --- Monte Carlo-cache -------------------------------------------------------
@@ -140,8 +140,9 @@ def defaults():
 
 
 @app.route("/api/simulate", methods=["POST"])
+@security.rate_limit(60, 60)
 def api_simulate():
-    data = request.get_json(force=True) or {}
+    data = request.get_json(silent=True) or {}
     key = data.get("scenario")
     if key:
         p = scenarios.get_scenario(key, years=float(data.get("years", 30)))
@@ -151,8 +152,9 @@ def api_simulate():
 
 
 @app.route("/api/montecarlo", methods=["POST"])
+@security.rate_limit(6, 60)
 def api_montecarlo():
-    data = request.get_json(force=True) or {}
+    data = request.get_json(silent=True) or {}
     draws = int(data.get("draws", 16))
     td = float(data.get("temp_delta", 0.0))
     sd = float(data.get("salinity_delta", 0.0))
@@ -188,7 +190,10 @@ def api_verify():
 def api_reports():
     if request.method == "GET":
         return jsonify({"rapporter": reports.list_reports()})
-    data = request.get_json(force=True) or {}
+    # F-02: att lägga till publikationer kräver lösenord (abborre).
+    if not security.check_password():
+        return jsonify({"error": "Fel lösenord. Ange lösenordet för att hantera publikationer."}), 403
+    data = request.get_json(silent=True) or {}
     try:
         meta = reports.add_report(data.get("titel"), data.get("text"))
         return jsonify({"ok": True, "rapport": meta})
@@ -197,22 +202,25 @@ def api_reports():
 
 
 @app.route("/api/reports/<int:rid>", methods=["DELETE"])
+@security.require_admin
 def api_reports_delete(rid):
     return jsonify({"ok": reports.delete_report(rid)})
 
 
 @app.route("/api/ai/scenario", methods=["POST"])
+@security.rate_limit(10, 60)
 def api_ai_scenario():
-    data = request.get_json(force=True) or {}
-    text = (data.get("text") or "").strip()
+    data = request.get_json(silent=True) or {}
+    text = (str(data.get("text") or "")).strip()[:4000]
     if not text:
         return jsonify({"error": "Ingen text angavs."}), 400
     return jsonify(advisor.parse_scenario(text, current=data.get("current")))
 
 
 @app.route("/api/ai/explain", methods=["POST"])
+@security.rate_limit(10, 60)
 def api_ai_explain():
-    data = request.get_json(force=True) or {}
+    data = request.get_json(silent=True) or {}
     summary = data.get("summary")
     if not summary:
         return jsonify({"error": "Ingen sammanfattning angavs."}), 400
@@ -220,8 +228,9 @@ def api_ai_explain():
 
 
 @app.route("/api/ai/research", methods=["POST"])
+@security.rate_limit(10, 60)
 def api_ai_research():
-    data = request.get_json(force=True) or {}
+    data = request.get_json(silent=True) or {}
     sens = data.get("kanslighet")
     if not sens:
         return jsonify({"error": "Kör Monte Carlo först (saknar känslighetsdata)."}), 400
@@ -229,33 +238,37 @@ def api_ai_research():
 
 
 @app.route("/api/ai/suggest-reports", methods=["POST"])
+@security.rate_limit(10, 60)
 def api_ai_suggest_reports():
-    data = request.get_json(force=True) or {}
+    data = request.get_json(silent=True) or {}
     return jsonify({"text": advisor.suggest_reports(data.get("kanslighet"))})
 
 
 # --- Spara/ladda parameteruppsättningar (server) -----------------------------
 @app.route("/api/saved", methods=["GET", "POST"])
+@security.rate_limit(40, 60)
 def api_saved():
     if request.method == "GET":
         return jsonify({"sparade": saved.list_saved(request.args.get("user"))})
-    data = request.get_json(force=True) or {}
+    data = request.get_json(silent=True) or {}
     meta = saved.save(data.get("namn"), data.get("params"),
                       data.get("summary"), data.get("user"))
     return jsonify({"ok": True, "sparad": meta})
 
 
 @app.route("/api/saved/<int:sid>", methods=["DELETE"])
+@security.rate_limit(40, 60)
 def api_saved_delete(sid):
     return jsonify({"ok": saved.delete(sid)})
 
 
 # --- Idélåda -----------------------------------------------------------------
 @app.route("/api/ideas", methods=["GET", "POST"])
+@security.rate_limit(20, 60)
 def api_ideas():
     if request.method == "GET":
         return jsonify({"ideer": ideas.list_ideas()})
-    data = request.get_json(force=True) or {}
+    data = request.get_json(silent=True) or {}
     try:
         return jsonify({"ok": True, "ide": ideas.add_idea(data.get("namn"), data.get("text"))})
     except ValueError as e:
@@ -263,6 +276,7 @@ def api_ideas():
 
 
 @app.route("/api/ideas/<int:iid>", methods=["DELETE"])
+@security.require_admin
 def api_ideas_delete(iid):
     return jsonify({"ok": ideas.delete(iid)})
 
@@ -275,8 +289,9 @@ def api_i18n(code):
 
 # --- Export (enkel sida / PowerPoint / rapport) ------------------------------
 @app.route("/api/export", methods=["POST"])
+@security.rate_limit(20, 60)
 def api_export():
-    data = request.get_json(force=True) or {}
+    data = request.get_json(silent=True) or {}
     fmt = data.get("format", "sida")
     lang = data.get("lang", "sv")
     strings = i18n.get(lang)
@@ -297,5 +312,12 @@ def api_export():
 
 
 if __name__ == "__main__":
+    # Direkt "python app.py" är utvecklings-entrypointen → utvecklingsläge om inget
+    # annat sagts. Publik drift körs via gunicorn (se README) där APP_ENV=production.
+    os.environ.setdefault("APP_ENV", "development")
     port = int(os.environ.get("PORT", 5800))
-    app.run(host="0.0.0.0", port=port, debug=True)
+    # F-10: debug är AV som standard; slås bara på med FLASK_DEBUG=1.
+    debug = os.environ.get("FLASK_DEBUG", "").strip() in ("1", "true", "True")
+    # Bind till localhost i debugläge (Werkzeug-debuggern får aldrig exponeras publikt).
+    host = "127.0.0.1" if debug else "0.0.0.0"
+    app.run(host=host, port=port, debug=debug)

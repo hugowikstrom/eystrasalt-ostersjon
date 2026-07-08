@@ -66,6 +66,16 @@ const PRESETS = {
 
 const $ = (id) => document.getElementById(id);
 const T = (k, fallback) => STR[k] || fallback || k;
+
+// Säker HTML-escaping av användarinnehåll (F-01: hindrar lagrad XSS när text från
+// idélåda, publikationer, sparade körningar och användarnamn renderas via innerHTML).
+function escHtml(s) {
+  return String(s == null ? "" : s)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+// Escaping för värden som hamnar i ett HTML-attribut (t.ex. data-params='…').
+const escAttr = escHtml;
 const BASE_YEAR = 2025;    // simuleringens startår (år 0 = nuläge)
 // Språkkod → talspråk (locale) för webbläsarens tala-till-text
 const LOCALE = { sv:"sv-SE", en:"en-US", fi:"fi-FI", et:"et-EE", lv:"lv-LV",
@@ -770,9 +780,9 @@ async function loadSavedList() {
     }));
 }
 function rowSaved(label, params, kind, id) {
-  return `<div class="rep"><div class="rt">${label}</div><div>
-    <button data-load="1" data-params='${JSON.stringify(params)}'>${T("load","Ladda")}</button>
-    <button data-del="${kind}:${id}">${T("delete","Ta bort")}</button></div></div>`;
+  return `<div class="rep"><div class="rt">${escHtml(label)}</div><div>
+    <button data-load="1" data-params='${escAttr(JSON.stringify(params))}'>${T("load","Ladda")}</button>
+    <button data-del="${escAttr(kind + ":" + id)}">${T("delete","Ta bort")}</button></div></div>`;
 }
 
 // ---- AI: scenario + förklaring ----
@@ -974,18 +984,29 @@ async function runVerify() {
   $("verify-run").disabled = false;
 }
 
-// ---- Rapporter ----
+// ---- Publikationer/rapporter (lösenordsskyddad hantering, F-02) ----
+// Att lägga till/ta bort publikationer kräver lösenordet "abborre". Vi frågar en
+// gång per session och skickar det som header. Vid fel nollställs det för nytt försök.
+let adminPw = "";
+function askAdminPw() {
+  if (!adminPw) adminPw = (window.prompt(T("pw_prompt", "Lösenord för att hantera publikationer:")) || "").trim();
+  return adminPw;
+}
+function adminHeaders(extra) {
+  return Object.assign({ "X-Admin-Password": askAdminPw() }, extra || {});
+}
 async function loadReports() {
   const d = await (await fetch("/api/reports")).json();
   const list = d.rapporter || [];
   $("rep-list").innerHTML = list.length ? list.map(r => `
     <div class="rep">
-      <div><div class="rt">${r.titel}</div><div class="rm">${r.tillagd} · ${r.tecken} tecken · ${r.utdrag}…</div></div>
-      <button data-del="${r.id}">${T("delete","Ta bort")}</button>
+      <div><div class="rt">${escHtml(r.titel)}</div><div class="rm">${escHtml(r.tillagd)} · ${r.tecken|0} tecken · ${escHtml(r.utdrag)}…</div></div>
+      <button data-del="${r.id|0}">${T("delete","Ta bort")}</button>
     </div>`).join("") : `<p class="hint">Inga rapporter inlagda ännu.</p>`;
   $("rep-list").querySelectorAll("button[data-del]").forEach(b =>
     b.addEventListener("click", async () => {
-      await fetch("/api/reports/" + b.dataset.del, { method: "DELETE" });
+      const resp = await fetch("/api/reports/" + b.dataset.del, { method: "DELETE", headers: adminHeaders() });
+      if (resp.status === 403) { adminPw = ""; $("rep-status").textContent = T("pw_wrong", "Fel lösenord."); return; }
       loadReports();
     }));
 }
@@ -993,11 +1014,13 @@ async function addReport() {
   const titel = $("rep-title").value.trim(), text = $("rep-text").value.trim();
   if (!text) { $("rep-status").textContent = "Klistra in text först."; return; }
   $("rep-add").disabled = true;
-  const r = await (await fetch("/api/reports", {
-    method: "POST", headers: {"Content-Type":"application/json"},
+  const resp = await fetch("/api/reports", {
+    method: "POST", headers: adminHeaders({"Content-Type":"application/json"}),
     body: JSON.stringify({ titel, text }),
-  })).json();
-  if (r.ok) { $("rep-title").value = ""; $("rep-text").value = "";
+  });
+  const r = await resp.json();
+  if (resp.status === 403) { adminPw = ""; $("rep-status").textContent = r.error || T("pw_wrong", "Fel lösenord."); }
+  else if (r.ok) { $("rep-title").value = ""; $("rep-text").value = "";
     $("rep-status").textContent = "Tillagd. AI:n väger nu in den."; loadReports(); }
   else $("rep-status").textContent = r.error || "Fel.";
   $("rep-add").disabled = false;
@@ -1008,13 +1031,15 @@ async function loadIdeas() {
   const d = await (await fetch("/api/ideas")).json();
   const list = d.ideer || [];
   $("idea-list").innerHTML = list.length ? list.map(i => `
-    <div class="rep"><div><div class="rt">${i.text}</div>
-      <div class="rm">— ${i.namn} · ${i.tid}</div></div>
-      <button data-del="${i.id}">${T("delete","Ta bort")}</button></div>`).join("")
+    <div class="rep"><div><div class="rt">${escHtml(i.text)}</div>
+      <div class="rm">— ${escHtml(i.namn)} · ${escHtml(i.tid)}</div></div>
+      <button data-del="${i.id|0}">${T("delete","Ta bort")}</button></div>`).join("")
     : `<p class="hint">Inga idéer ännu — bli först!</p>`;
   $("idea-list").querySelectorAll("button[data-del]").forEach(b =>
     b.addEventListener("click", async () => {
-      await fetch("/api/ideas/" + b.dataset.del, { method:"DELETE" }); loadIdeas(); }));
+      const resp = await fetch("/api/ideas/" + b.dataset.del, { method:"DELETE", headers: adminHeaders() });
+      if (resp.status === 403) { adminPw = ""; $("idea-status").textContent = T("pw_wrong", "Fel lösenord."); return; }
+      loadIdeas(); }));
 }
 async function addIdea() {
   const namn = $("idea-name").value.trim(), text = $("idea-text").value.trim();
@@ -1136,7 +1161,7 @@ function setupShare() {
 function renderUser() {
   const lbl = $("user-label");
   lbl.innerHTML = currentUser
-    ? `${T("active_user","Aktiv användare")}: <b>${currentUser}</b>`
+    ? `${T("active_user","Aktiv användare")}: <b>${escHtml(currentUser)}</b>`
     : T("no_user","Ingen användare vald — dina serverkörningar sparas öppet.");
   $("user-name").value = currentUser;
 }

@@ -180,6 +180,101 @@ def _references():
     return refs
 
 
+# --- Lägesspecifikt innehåll (så lägena skiljer sig ÄVEN utan AI-text) -------
+def _halsa_ord(hn):
+    try:
+        hn = float(hn)
+    except (TypeError, ValueError):
+        return "okänt"
+    if hn >= 75:
+        return "Havet mår förhållandevis bra i den här körningen"
+    if hn >= 55:
+        return "Havet är påverkat men fungerar"
+    if hn >= 35:
+        return "Havet visar tydliga tecken på stress"
+    return "Havet är hårt pressat"
+
+
+def _top_movers(arter, n=3):
+    """Plain-språk: de arter som ändrades mest (för nyfiken-läget)."""
+    scored = []
+    for a in arter:
+        try:
+            s, e = float(a.get("start")), float(a.get("slut"))
+        except (TypeError, ValueError):
+            continue
+        scored.append((abs(e - s), str(a.get("namn", "")), s, e))
+    scored.sort(reverse=True)
+    out = []
+    for _, namn, s, e in scored[:n]:
+        rikt = "ökade" if e > s else ("minskade" if e < s else "var stabil")
+        out.append(f"{namn} {rikt} (från {s:g} till {e:g}).")
+    return out
+
+
+def _nyfiken_fallback(summary):
+    hn = summary.get("halsa_nu")
+    if hn is not None:
+        return (f"I den här körningen hamnade havets hälsa på {hn} av 100. "
+                "Här är det som förändrades mest bland arterna.")
+    return "Här är en enkel överblick av din körning."
+
+
+def _politik_fallback(summary):
+    hn = summary.get("halsa_nu")
+    mc = summary.get("mc") or {}
+    bits = []
+    if hn is not None:
+        bits.append(f"Ekosystemets hälsa i körningen: {hn}/100.")
+    if mc.get("basta_namn"):
+        bits.append(f"Strategin med bäst återhämtning: {mc['basta_namn']}.")
+    eco = mc.get("ekonomi_per_land") or {}
+    if eco:
+        try:
+            tot = sum(float(v) for v in eco.values())
+            bits.append(f"Sammanlagt beräknat årligt värde av åtgärden: cirka {tot:g} M€/år, "
+                        "fördelat på länderna enligt tabellen nedan.")
+        except (TypeError, ValueError):
+            pass
+    bits.append("Nedan följer handlingsalternativ och argument för beslut.")
+    return " ".join(bits)
+
+
+def _forskare_fallback(summary):
+    hn = summary.get("halsa_nu")
+    s = "Sammanfattning av körningen för vidare analys. "
+    if hn is not None:
+        s += f"Hälsoindex: {hn}/100. "
+    s += ("Resultaten är kvalitativa riktningar från en förenklad, litteraturförankrad "
+          "modell — fokusera på mekanismer, osäkerheter och känslighet nedan.")
+    return s
+
+
+POLITIK_LEVERS = [
+    "Minska närsaltbelastningen (kväve och fosfor) enligt HELCOM:s aktionsplan (BSAP) — "
+    "störst långsiktig effekt, men havet svarar trögt på grund av intern belastning.",
+    "Anpassa fiskeuttaget efter beståndens status (t.ex. torskstopp vid kollaps) och "
+    "samordna kvoter mellan länderna.",
+    "Åtgärder i kustzonen mot spigg-dominans: skydda lek- och uppväxtområden för abborre och gädda.",
+    "Investera i övervakning och åtgärder samordnat via HELCOM — havet delas av nio länder "
+    "och vinsterna fördelas ojämnt (se tabellen).",
+    "Argument: kostnaden för att inte agera (förlorade ekosystemtjänster, fiske och turism) "
+    "överstiger på sikt åtgärdskostnaden.",
+]
+FORSKARE_GAPS = [
+    "Intern fosforbelastning från syrefria bottnar — styrkan i den självförstärkande onda cirkeln.",
+    "Storspiggens larvpredation på torsk, abborre och gädda (wasp-waist-styrkan).",
+    "Frekvens och effekt av större saltvatteninflöden (MBI) samt skiktningens klimatberoende.",
+    "Kalibrering av modellens relativa biomassaenheter mot uppmätta beståndsuppskattningar.",
+]
+FORSKARE_NEXT = [
+    "Prioritera mätserier av bottensyre och fosforflöden i de djupa bassängerna.",
+    "Fältstudier av spiggens predation på fiskyngel längs salthaltsgradienten.",
+    "Koppla modellen till hydrografiska data (inflöden, temperatur, skiktning) för bättre syredynamik.",
+    "Validera de ekonomiska koefficienterna mot BalticSTERN/HELCOM för robustare värdering.",
+]
+
+
 # --- Enkel HTML-sida ---------------------------------------------------------
 def _build_html(summary, report_text, recipient, title, strings, mode="generell"):
     esc = html.escape
@@ -233,121 +328,210 @@ def _build_html(summary, report_text, recipient, title, strings, mode="generell"
     if recipient:
         parts.append(f'<div class="to"><b>{esc(strings.get("till","Till"))}:</b> {esc(recipient)}</div>')
 
-    # Förord
-    parts.append(f'<h2 id="forord">{esc(S("forord_h"))}</h2><p>{esc(SECT["forord"])}</p>')
-
-    # Sammanfattning (AI)
-    parts.append(f'<h2 id="sammanfattning">{esc(S("sammanfattning_h"))}</h2>')
-    parts.append('<div class="summary-card">')
-    if report_text:
-        for para in report_text.split("\n"):
-            para = para.strip()
-            if not para:
-                continue
-            # Enkla markdown-rubriker (##/**) → snygga rubriker i rapporten
-            if para.startswith("#"):
-                parts.append(f"<h3>{esc(para.lstrip('# ').strip())}</h3>")
-            elif para.startswith("**") and para.endswith("**") and len(para) > 4:
-                parts.append(f"<h3>{esc(para.strip('*').strip())}</h3>")
-            else:
-                parts.append(f"<p>{esc(para)}</p>")
-    else:
-        parts.append("<p class='muted'>(Ingen sammanfattande text genererades för denna "
-                     "körning — kryssa i „Låt AI:n skriva rapporttext” och kör igen.)</p>")
-    parts.append('</div>')
-
-    # Innehåll
-    parts.append(f'<h2>{esc(S("innehall_h"))}</h2><div class="toc">'
-                 f'<a href="#forord">{esc(S("forord_h"))}</a><br>'
-                 f'<a href="#sammanfattning">{esc(S("sammanfattning_h"))}</a><br>'
-                 f'<a href="#inledning">{esc(S("inledning_h"))}</a><br>'
-                 f'<a href="#metod">{esc(S("metod_h"))}</a><br>'
-                 f'<a href="#resultat">{esc(S("resultat_h"))}</a><br>'
-                 f'<a href="#diskussion">{esc(S("diskussion_h"))}</a><br>'
-                 f'<a href="#slutsatser">{esc(S("slutsatser_h"))}</a><br>'
-                 f'<a href="#referenser">{esc(S("referenser_h"))}</a></div>')
-
-    # 1 Inledning
-    parts.append(f'<h2 id="inledning">{esc(S("inledning_h"))}</h2>')
-    parts.append(f'<h3>{esc(S("bakgrund_h"))}</h3><p>{esc(SECT["bakgrund"])}</p>')
-    parts.append(f'<h3>{esc(S("syfte_h"))}</h3><p>{esc(SECT["syfte"])}</p>')
-    parts.append(f'<h3>{esc(S("avgransningar_h"))}</h3><p>{esc(SECT["avgransningar"])}</p>')
-
-    # 2 Metod
-    parts.append(f'<h2 id="metod">{esc(S("metod_h"))}</h2>')
-    parts.append(f'<h3>{esc(S("modell_h"))}</h3><p>{esc(SECT["modell"])}</p>')
-    parts.append(f'<h3>{esc(S("scenario_h"))}</h3>')
-    if params:
-        parts.append('<table><thead><tr><th>Parameter</th><th>Värde</th></tr></thead><tbody>')
-        for k, v in params:
-            parts.append(f"<tr><td>{esc(str(k))}</td><td>{esc(str(v))}</td></tr>")
-        parts.append("</tbody></table>")
-    else:
-        parts.append("<p class='muted'>Standardinställningar (baslinje).</p>")
-
-    # 3 Resultat
-    parts.append(f'<h2 id="resultat">{esc(S("resultat_h"))}</h2>')
     hn = summary.get("halsa_nu")
-    if hn is not None:
-        parts.append(f'<h3>{esc(S("res_halsa_h"))}</h3>'
-                     f'<p><span class="badge">{esc(str(hn))} / 100</span> (index 0–100)</p>')
-    if arter:
-        parts.append(f'<h3>{esc(S("res_arter_h"))}</h3>'
-                     '<table><thead><tr><th>Art</th><th>Start</th><th>Slut</th><th>Enhet</th></tr></thead><tbody>')
+
+    # ---- Återanvändbara byggblock (samma data, olika disposition per läge) ---
+    def summary_block(fallback):
+        out = ['<div class="summary-card">']
+        if report_text:
+            for para in report_text.split("\n"):
+                para = para.strip()
+                if not para:
+                    continue
+                if para.startswith("#"):
+                    out.append(f"<h3>{esc(para.lstrip('# ').strip())}</h3>")
+                elif para.startswith("**") and para.endswith("**") and len(para) > 4:
+                    out.append(f"<h3>{esc(para.strip('*').strip())}</h3>")
+                else:
+                    out.append(f"<p>{esc(para)}</p>")
+        else:
+            out.append(f"<p>{esc(fallback)}</p>")
+        out.append("</div>")
+        return out
+
+    def params_table():
+        if not params:
+            return ["<p class='muted'>Standardinställningar (baslinje).</p>"]
+        out = ['<table><thead><tr><th>Parameter</th><th>Värde</th></tr></thead><tbody>']
+        for k, v in params:
+            out.append(f"<tr><td>{esc(str(k))}</td><td>{esc(str(v))}</td></tr>")
+        out.append("</tbody></table>")
+        return out
+
+    def arter_table():
+        if not arter:
+            return []
+        out = ['<table><thead><tr><th>Art</th><th>Start</th><th>Slut</th>'
+               '<th>Enhet</th></tr></thead><tbody>']
         for a in arter:
-            parts.append(f"<tr><td>{esc(str(a.get('namn','')))}</td><td>{esc(str(a.get('start','')))}</td>"
-                         f"<td>{esc(str(a.get('slut','')))}</td><td class='muted'>{esc(str(a.get('enhet','')))}</td></tr>")
-        parts.append("</tbody></table>")
-    if niv:
-        parts.append(f'<h3>{esc(S("res_pyramid_h"))}</h3><table><thead>'
-                     '<tr><th>Nivå</th><th>g/m²</th></tr></thead><tbody>')
+            out.append(f"<tr><td>{esc(str(a.get('namn','')))}</td><td>{esc(str(a.get('start','')))}</td>"
+                       f"<td>{esc(str(a.get('slut','')))}</td><td class='muted'>{esc(str(a.get('enhet','')))}</td></tr>")
+        out.append("</tbody></table>")
+        return out
+
+    def pyramid_table():
+        if not niv:
+            return []
+        out = ['<table><thead><tr><th>Nivå</th><th>g/m²</th></tr></thead><tbody>']
         for namn, val in niv.items():
-            parts.append(f"<tr><td>{esc(str(namn))}</td><td>{esc(str(val))}</td></tr>")
-        parts.append("</tbody></table>")
-    if uttak:
-        parts.append(f'<h3>{esc(S("res_uttak_h"))}</h3><table><thead>'
-                     '<tr><th>Uttag</th><th>g/m²/år</th></tr></thead><tbody>')
+            out.append(f"<tr><td>{esc(str(namn))}</td><td>{esc(str(val))}</td></tr>")
+        out.append("</tbody></table>")
+        return out
+
+    def uttak_table():
+        if not uttak:
+            return []
+        out = ['<table><thead><tr><th>Uttag</th><th>g/m²/år</th></tr></thead><tbody>']
         labels = {"fiske": "Fiske (människa)", "sal": "Säl", "skarv": "Skarv/sjöfågel",
                   "atervinning": "Återvinning (nedbrytning→näring)"}
         for k, lab in labels.items():
             if k in uttak:
-                parts.append(f"<tr><td>{esc(lab)}</td><td>{esc(str(uttak[k]))}</td></tr>")
-        parts.append("</tbody></table>")
-    if mc:
-        parts.append(f'<h3>{esc(S("res_strategi_h"))}</h3>')
-        parts.append(f"<p><b>{esc(str(mc.get('basta_namn','')))}</b></p>")
+                out.append(f"<tr><td>{esc(lab)}</td><td>{esc(str(uttak[k]))}</td></tr>")
+        out.append("</tbody></table>")
+        return out
+
+    def economy_block(politik=False):
+        if not mc:
+            return []
+        out = [f"<p><b>{esc(str(mc.get('basta_namn','')))}</b></p>"]
         eco = mc.get("ekonomi_per_land") or {}
         if eco:
             rows = _economy_rows(eco, mode)
-            if mode == "politik":
-                parts.append("<table><thead><tr><th>Land</th><th>Euro/år</th>"
-                             "<th>Lokal valuta/år</th></tr></thead><tbody>")
+            if politik:
+                out.append("<table><thead><tr><th>Land</th><th>Euro/år</th>"
+                           "<th>Lokal valuta/år</th></tr></thead><tbody>")
                 for land, eur, loc in rows:
-                    parts.append(f"<tr><td>{esc(land)}</td><td>{esc(eur)}</td>"
-                                 f"<td>{esc(loc or '—')}</td></tr>")
-                parts.append("</tbody></table>")
-                parts.append('<p class="muted">Lokal valuta är omräknad från euro med '
-                             'ungefärliga växelkurser — storleksordningar för jämförelse.</p>')
+                    out.append(f"<tr><td>{esc(land)}</td><td>{esc(eur)}</td>"
+                               f"<td>{esc(loc or '—')}</td></tr>")
+                out.append("</tbody></table>")
+                out.append('<p class="muted">Lokal valuta omräknad från euro med ungefärliga '
+                           'växelkurser — storleksordningar för jämförelse.</p>')
             else:
-                parts.append("<table><thead><tr><th>Land</th><th>M€/år</th></tr></thead><tbody>")
+                out.append("<table><thead><tr><th>Land</th><th>M€/år</th></tr></thead><tbody>")
                 for land, eur, _loc in rows:
-                    parts.append(f"<tr><td>{esc(land)}</td><td>{esc(eur)}</td></tr>")
-                parts.append("</tbody></table>")
+                    out.append(f"<tr><td>{esc(land)}</td><td>{esc(eur)}</td></tr>")
+                out.append("</tbody></table>")
+        return out
 
-    # 4 Diskussion
-    parts.append(f'<h2 id="diskussion">{esc(S("diskussion_h"))}</h2><p>{esc(SECT["diskussion"])}</p>')
+    def health_badge():
+        if hn is None:
+            return []
+        return [f'<p><span class="badge">{esc(str(hn))} / 100</span> (index 0–100)</p>']
 
-    # 5 Slutsatser
-    parts.append(f'<h2 id="slutsatser">{esc(S("slutsatser_h"))}</h2><ul>')
-    for s in _slutsatser(summary):
-        parts.append(f"<li>{esc(s)}</li>")
-    parts.append("</ul>")
+    def ul(items):
+        return ["<ul>"] + [f"<li>{esc(x)}</li>" for x in items] + ["</ul>"]
 
-    # 6 Referenser
-    parts.append(f'<h2 id="referenser">{esc(S("referenser_h"))}</h2><ol>')
-    for ref in _references():
-        parts.append(f"<li>{esc(ref)}</li>")
-    parts.append("</ol>")
+    def ol(items):
+        return ["<ol>"] + [f"<li>{esc(x)}</li>" for x in items] + ["</ol>"]
+
+    # ---- Lägesspecifik disposition ------------------------------------------
+    if mode == "nyfiken":
+        parts.append("<h2>Så mår havet</h2>")
+        if hn is not None:
+            parts.append(f'<p style="font-size:2.6rem;margin:.1em 0"><b>{esc(str(hn))}</b>'
+                         f'<span class="muted" style="font-size:1rem"> / 100</span></p>')
+            parts.append(f"<p>{esc(_halsa_ord(hn))}.</p>")
+        parts.append("<h2>Vad hände i din körning?</h2>")
+        parts += summary_block(_nyfiken_fallback(summary))
+        movers = _top_movers(arter)
+        if movers:
+            parts += ul(movers)
+        parts.append("<h2>Varför spelar det roll?</h2>")
+        parts.append("<p>Östersjön är ett känsligt innanhav. När en del ändras — övergödning, "
+                     "värme eller fiske — påverkas hela näringsväven, ända upp till torsk, fågel "
+                     "och säl. Ett friskare hav ger mer fisk, klarare vatten och ett rikare liv "
+                     "för oss alla runt kusten.</p>")
+        parts.append('<p class="muted">Vill du gräva djupare? Byt läge till „Generell”, '
+                     '„Politik” eller „Forskare” när du exporterar.</p>')
+
+    elif mode == "politik":
+        parts.append("<h2>Sammanfattning för beslutsfattare</h2>")
+        parts += summary_block(_politik_fallback(summary))
+        parts.append("<h2>Ekonomiskt värde per land</h2>")
+        if mc:
+            parts += economy_block(politik=True)
+        else:
+            parts.append('<p class="muted">Kör en Monte Carlo-jämförelse för ekonomiska '
+                         'värden per land.</p>')
+        parts.append("<h2>Strategier och handlingsalternativ</h2>")
+        parts += ul(POLITIK_LEVERS)
+        parts.append("<h2>Resultat i korthet</h2>")
+        parts += health_badge()
+        parts += arter_table()
+        parts.append("<h2>Slutsatser</h2>")
+        parts += ul(_slutsatser(summary))
+        parts.append(f'<h2>Om underlaget</h2><p>{esc(SECT["avgransningar"])}</p>')
+
+    elif mode == "forskare":
+        parts.append("<h2>Sammanfattning</h2>")
+        parts += summary_block(_forskare_fallback(summary))
+        parts.append(f'<h2>Metod och modell</h2><p>{esc(SECT["modell"])}</p>')
+        parts.append("<h3>Scenario och inställningar</h3>")
+        parts += params_table()
+        parts.append("<h2>Resultat</h2>")
+        parts += health_badge()
+        parts += arter_table()
+        if niv:
+            parts.append("<h3>Näringspyramid (g/m²)</h3>")
+            parts += pyramid_table()
+        if uttak:
+            parts.append("<h3>Uttag ur havet</h3>")
+            parts += uttak_table()
+        if mc:
+            parts.append("<h3>Strategi och ekonomi</h3>")
+            parts += economy_block()
+        parts.append(f'<h2>Osäkerheter och känslighet</h2><p>{esc(SECT["avgransningar"])}</p>')
+        parts.append("<p>Osäkra naturparametrar analyseras i appens Monte Carlo- och "
+                     "känslighetsanalys. De största osäkerheterna rör:</p>")
+        parts += ul(FORSKARE_GAPS)
+        parts.append("<h2>Kunskapsluckor och nästa steg</h2>")
+        parts += ol(FORSKARE_NEXT)
+        parts.append(f'<h2>Referenser</h2>')
+        parts += ol(_references())
+
+    else:  # generell — fullständig HaV-struktur
+        parts.append(f'<h2 id="forord">{esc(S("forord_h"))}</h2><p>{esc(SECT["forord"])}</p>')
+        parts.append(f'<h2 id="sammanfattning">{esc(S("sammanfattning_h"))}</h2>')
+        parts += summary_block("(Ingen sammanfattande text genererades — kryssa i "
+                               "„Låt AI:n skriva rapporttext” och kör igen.)")
+        parts.append(f'<h2>{esc(S("innehall_h"))}</h2><div class="toc">'
+                     f'<a href="#forord">{esc(S("forord_h"))}</a><br>'
+                     f'<a href="#sammanfattning">{esc(S("sammanfattning_h"))}</a><br>'
+                     f'<a href="#inledning">{esc(S("inledning_h"))}</a><br>'
+                     f'<a href="#metod">{esc(S("metod_h"))}</a><br>'
+                     f'<a href="#resultat">{esc(S("resultat_h"))}</a><br>'
+                     f'<a href="#diskussion">{esc(S("diskussion_h"))}</a><br>'
+                     f'<a href="#slutsatser">{esc(S("slutsatser_h"))}</a><br>'
+                     f'<a href="#referenser">{esc(S("referenser_h"))}</a></div>')
+        parts.append(f'<h2 id="inledning">{esc(S("inledning_h"))}</h2>')
+        parts.append(f'<h3>{esc(S("bakgrund_h"))}</h3><p>{esc(SECT["bakgrund"])}</p>')
+        parts.append(f'<h3>{esc(S("syfte_h"))}</h3><p>{esc(SECT["syfte"])}</p>')
+        parts.append(f'<h3>{esc(S("avgransningar_h"))}</h3><p>{esc(SECT["avgransningar"])}</p>')
+        parts.append(f'<h2 id="metod">{esc(S("metod_h"))}</h2>')
+        parts.append(f'<h3>{esc(S("modell_h"))}</h3><p>{esc(SECT["modell"])}</p>')
+        parts.append(f'<h3>{esc(S("scenario_h"))}</h3>')
+        parts += params_table()
+        parts.append(f'<h2 id="resultat">{esc(S("resultat_h"))}</h2>')
+        if hn is not None:
+            parts.append(f'<h3>{esc(S("res_halsa_h"))}</h3>')
+            parts += health_badge()
+        if arter:
+            parts.append(f'<h3>{esc(S("res_arter_h"))}</h3>')
+            parts += arter_table()
+        if niv:
+            parts.append(f'<h3>{esc(S("res_pyramid_h"))}</h3>')
+            parts += pyramid_table()
+        if uttak:
+            parts.append(f'<h3>{esc(S("res_uttak_h"))}</h3>')
+            parts += uttak_table()
+        if mc:
+            parts.append(f'<h3>{esc(S("res_strategi_h"))}</h3>')
+            parts += economy_block(politik=False)
+        parts.append(f'<h2 id="diskussion">{esc(S("diskussion_h"))}</h2><p>{esc(SECT["diskussion"])}</p>')
+        parts.append(f'<h2 id="slutsatser">{esc(S("slutsatser_h"))}</h2>')
+        parts += ul(_slutsatser(summary))
+        parts.append(f'<h2 id="referenser">{esc(S("referenser_h"))}</h2>')
+        parts += ol(_references())
 
     parts.append(f'<p class="muted" style="margin-top:36px;border-top:1px solid var(--line);'
                  f'padding-top:12px">Genererad av Eystrasalt — open source digital tvilling '

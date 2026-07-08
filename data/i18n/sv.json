@@ -167,5 +167,16 @@
   "about_model": "17 arter i näringsväven (näringssalter, växtplankton, cyanobakterier, djurplankton, bottenfauna, sill, skarpsill, spigg, abborre, gädda, torsk, lax, sjöfågel/skarv, säl, ytsyre, bottensyre, detritus/kadaver), 6 zoner med salthaltsgradient, verifiering mot litteraturen och ett AI-lager. Referensbiblioteket bygger på HELCOM, ICES, SMHI, Havs- och vattenmyndigheten m.fl.",
   "about_contact": "Kontakt",
   "about_license": "Licens: open source (MIT). Ingen garanti — se brasklappen ovan.",
-  "about_quote": "\"Ett friskare hav är värt mer än vi tror — och förståelse är första steget.\""
+  "about_quote": "\"Ett friskare hav är värt mer än vi tror — och förståelse är första steget.\"",
+  "tab_ekologi": "Ekologimatris",
+  "ekologi_title": "Ekologisk beroendematris",
+  "ekologi_hint": "Vem beror på vem i näringsväven. Läs raden: organismen i raden beror på organismerna i kolumnerna (som föda eller näring). Ju mörkare ruta, desto starkare beroende. Kretsloppet sluts: allt som dör blir detritus/kadaver som bryts ned till näring igen.",
+  "ekologi_salt_title": "Salthaltsnisch (nord–syd)",
+  "ekologi_salt_hint": "Var längs salthaltsgradienten (norr = sött, söder = salt) varje art trivs bäst. Torsk kräver salt vatten i söder; abborre och gädda är sötvattenarter i norr.",
+  "eco_depends": "beror på",
+  "eco_row_consumer": "Konsument \\ Resurs",
+  "north": "norr",
+  "south": "söder",
+  "pw_prompt": "Lösenord för att hantera publikationer:",
+  "pw_wrong": "Fel lösenord."
 }

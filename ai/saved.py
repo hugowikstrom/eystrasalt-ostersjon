@@ -4,43 +4,45 @@ Spara och ladda parameteruppsättningar (och kort resultat-sammanfattning) på s
 En fil per sparad uppsättning i data/saved/. Frontend kan även spara LOKALT i
 webbläsaren (localStorage) — det här är serversidan så att sparade körningar finns
 kvar och kan delas mellan datorer. Ingen databas behövs; id = löpnummer.
+Lagringen är atomär och kapplöpningssäker (se ai/_store.py, F-07).
 """
 
-import glob
 import json
 import os
-import re
 from datetime import datetime
+
+from . import _store
 
 SAVED_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "saved")
 
-
-def _ensure():
-    os.makedirs(SAVED_DIR, exist_ok=True)
-
-
-def _path(sid):
-    return os.path.join(SAVED_DIR, f"{int(sid)}.json")
+MAX_NAME = 120
+MAX_USER = 60
+MAX_PARAMS_BYTES = 8000     # tak på params/summary-storlek (skydd mot uppsvälld JSON, F-03/F-04)
 
 
-def _next_id():
-    _ensure()
-    ids = [int(re.match(r"(\d+)\.json", os.path.basename(p)).group(1))
-           for p in glob.glob(os.path.join(SAVED_DIR, "*.json"))]
-    return (max(ids) + 1) if ids else 1
+def _bounded_dict(value):
+    """Tillåt bara dict-objekt av rimlig storlek (annars töm)."""
+    if not isinstance(value, dict):
+        return {}
+    try:
+        if len(json.dumps(value, ensure_ascii=False).encode("utf-8")) > MAX_PARAMS_BYTES:
+            return {}
+    except (TypeError, ValueError):
+        return {}
+    return value
 
 
 def save(namn, params, summary=None, user=""):
     """Sparar en parameteruppsättning + valfri sammanfattning. Returnerar metadata."""
-    _ensure()
-    namn = (namn or "Namnlös körning").strip()[:120]
-    user = (user or "").strip()[:60]
-    sid = _next_id()
-    obj = {"id": sid, "namn": namn, "user": user, "params": params or {},
-           "summary": summary or {}, "sparad": datetime.now().strftime("%Y-%m-%d %H:%M")}
-    with open(_path(sid), "w", encoding="utf-8") as f:
-        json.dump(obj, f, ensure_ascii=False)
-    return {"id": sid, "namn": namn, "user": user, "sparad": obj["sparad"]}
+    namn = (str(namn) if namn is not None else "").strip()[:MAX_NAME] or "Namnlös körning"
+    user = (str(user) if user is not None else "").strip()[:MAX_USER]
+    params = _bounded_dict(params)
+    summary = _bounded_dict(summary)
+    sparad = datetime.now().strftime("%Y-%m-%d %H:%M")
+    obj = _store.create(SAVED_DIR, lambda sid: {
+        "id": sid, "namn": namn, "user": user, "params": params,
+        "summary": summary, "sparad": sparad})
+    return {"id": obj["id"], "namn": namn, "user": user, "sparad": sparad}
 
 
 def list_saved(user=None):
@@ -48,23 +50,17 @@ def list_saved(user=None):
     Sparade uppsättningar. Ges 'user' returneras bara den användarens körningar
     (enkel, lösenordslös profil). Utan 'user' returneras alla.
     """
-    _ensure()
-    want = (user or "").strip()
+    want = (str(user) if user is not None else "").strip()
     out = []
-    for p in sorted(glob.glob(os.path.join(SAVED_DIR, "*.json"))):
-        with open(p, encoding="utf-8") as f:
-            o = json.load(f)
+    for o in _store.load_all(SAVED_DIR):
         if want and (o.get("user", "") != want):
             continue
-        out.append({"id": o["id"], "namn": o["namn"], "user": o.get("user", ""),
+        out.append({"id": o["id"], "namn": o.get("namn", ""), "user": o.get("user", ""),
                     "sparad": o.get("sparad", ""), "params": o.get("params", {}),
                     "summary": o.get("summary", {})})
+    out.sort(key=lambda o: o.get("id", 0))
     return out
 
 
 def delete(sid):
-    p = _path(sid)
-    if os.path.exists(p):
-        os.remove(p)
-        return True
-    return False
+    return _store.delete(SAVED_DIR, sid)

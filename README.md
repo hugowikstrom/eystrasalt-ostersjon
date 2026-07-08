@@ -76,6 +76,31 @@ gunicorn -w 4 -b 0.0.0.0:5800 app:app
 
 Lägg gärna en omvänd proxy (t.ex. Caddy eller nginx) framför för HTTPS.
 
+### Säkerhet & publik drift
+
+Appen är härdad enligt en säkerhetsgranskning (se `security.py` och
+`tests/test_security.py`). Viktigt inför publik drift:
+
+- **Publikationer/rapporter är lösenordsskyddade.** Att lägga till eller ta bort
+  publikationer (och att moderera idélådan) kräver lösenordet — standard `abborre`.
+  Byt det med miljövariabeln `ADMIN_PASSWORD`.
+- **Debug är av som standard.** Direkt `python app.py` kör i utvecklingsläge på
+  `127.0.0.1`. Sätt `FLASK_DEBUG=1` bara lokalt; kör publikt via gunicorn
+  (`APP_ENV=production`).
+- **Säkerhetsheaders + CSP** skickas på varje svar. **CORS är av** som standard;
+  tillåt specifika origins med `ALLOWED_ORIGINS=https://din.domän`.
+- **Takt-begränsning och storleksgräns** skyddar tunga endpoints (Monte Carlo, AI).
+  Räknaren är per process — komplettera med gränser i den omvända proxyn.
+- All användartext escapas i frontend (`escHtml`) innan den renderas → ingen lagrad XSS.
+
+Miljövariabler: `APP_ENV`, `ADMIN_PASSWORD`, `ALLOWED_ORIGINS`, `MAX_CONTENT_KB`,
+`FLASK_DEBUG`, `PORT`, `ANTHROPIC_API_KEY`.
+
+```bash
+APP_ENV=production ADMIN_PASSWORD=ditt-hemliga-ord \
+  gunicorn -w 4 -b 127.0.0.1:5800 app:app     # bakom Caddy/nginx med HTTPS
+```
+
 Testa modellen fristående:
 
 ```bash

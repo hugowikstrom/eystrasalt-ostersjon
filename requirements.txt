@@ -1,9 +1,11 @@
-flask
-flask-cors
-gunicorn
-python-dotenv
-numpy
-scipy
-anthropic
-python-pptx
-python-docx
+# Fastnaglade versioner för reproducerbara installationer (F-09).
+# Uppdatera medvetet och testa; kör t.ex. `pip list --outdated` regelbundet.
+flask==3.0.3
+flask-cors==4.0.1
+gunicorn==22.0.0
+python-dotenv==1.0.1
+numpy==1.26.4
+scipy==1.13.1
+anthropic==0.34.2
+python-pptx==0.6.23
+python-docx==1.1.2

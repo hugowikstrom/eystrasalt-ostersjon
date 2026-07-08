@@ -124,6 +124,16 @@ data/    hjälptexter, språk, rapporter, sparade körningar, idéer
 Idéer, rättelser, bättre parametrar/data och nya arter är mycket välkomna — via
 pull request, issue, appens Idélåda, eller mejl till hugo@bigakwa.com.
 
+## Stöd projektet 💙
+
+Jag driver Eystrasalt **ideellt, på min fritid och utan vinstsyfte**. Projektet har
+ändå löpande kostnader — **serverdrift, domän och AI-anrop (Claude)** för att tolka
+scenarier, förklara resultat och översätta gränssnittet. Vill du hjälpa till att
+hålla den digitala tvillingen levande tar jag tacksamt emot **stöd som går oavkortat
+till driften och AI-kostnaderna**. Varje bidrag, stort som litet, gör skillnad.
+
+Hör av dig så berättar jag hur du kan bidra: **hugo@bigakwa.com**
+
 ## Licens
 
 Open source (MIT). Använd fritt, bidra gärna. Ingen garanti — se brasklappen ovan.

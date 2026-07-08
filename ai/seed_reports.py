@@ -67,6 +67,36 @@ LIBRARY = [
     ("Havs- och vattenmyndigheten – Ekosystembaserad förvaltning av fisk och kust",
      "Svensk myndighetsvägledning om förvaltning av kustfiskbestånd (abborre, gädda), "
      "spiggproblematiken och åtgärder i kustzonen. Underlag för kust- och förvaltningsscenarier."),
+    ("Andersen et al. (2017) Long-term temporal and spatial trends in eutrophication status of the Baltic Sea. Biological Reviews",
+     "Syntes av övergödningsstatus 1901–2012: näringstillförseln kulminerade på 1980-talet och "
+     "har därefter minskat, men havet svarar långsamt pga intern belastning och tröga bottnar. "
+     "Underlag för trögheten i återhämtning vid minskad näringstillförsel."),
+    ("Bergström et al. (2015) Stickleback increase in the Baltic Sea. Marine Ecology Progress Series",
+     "Dokumenterar storspiggens kraftiga ökning och dess roll i regimskiften i kustzonen; spiggen "
+     "gynnas av utslagen kustrovfisk och varmare vatten. Stöd för wasp-waist-mekaniken i kust."),
+    ("Vahtera et al. (2007) Internal ecosystem feedbacks enhance nitrogen-fixing cyanobacteria blooms. Ambio",
+     "Beskriver den självförstärkande kopplingen: syrefria bottnar → fosforläckage → "
+     "cyanobakterieblomning (kvävefixering) → mer organiskt material → mer syrebrist. Central "
+     "för intern belastning och cyanobakteriernas näringsdynamik."),
+    ("Elmgren et al. (2015) Baltic Sea management: successes and failures. Ambio",
+     "Utvärderar decennier av Östersjöförvaltning; visar att åtgärder mot övergödning fungerar "
+     "men kräver uthållighet, och att fiskeförvaltning och övergödning måste ses ihop."),
+    ("Bryhn et al. (2022) Grey seal and cormorant interactions with Baltic coastal fish. SLU Aqua",
+     "Svensk sammanställning om gråsäl och skarv som predatorer på kustfisk och deras samspel "
+     "med fisket. Underlag för toppredatorernas (säl, sjöfågel) tryck på fiskbestånden."),
+    ("Hansson et al. (2018) Competition for the fish – shared fishery resources in the Baltic. ICES J. Marine Science",
+     "Analyserar konkurrensen om fiskresurserna mellan säl, skarv och yrkesfiske; kvantifierar "
+     "toppredatorernas konsumtion relativt fångsterna. Stöd för predationsparametrarna."),
+    ("Ojaveer et al. (2010) Status of biodiversity in the Baltic Sea. PLoS ONE",
+     "Översikt av Östersjöns biologiska mångfald: låg artrikedom pga bräckt vatten gör "
+     "ekosystemet känsligt — enskilda arter (t.ex. torsk, spigg) har stor systempåverkan. "
+     "Motiverar varför regimskiften slår hårt i just Östersjön."),
+    ("Snoeijs-Leijonmalm & Andrén (2017) Why is the Baltic Sea so special? (i Biological Oceanography of the Baltic Sea)",
+     "Läroboksöversikt av Östersjöns särdrag: ung, bräckt, skiktad och artfattig, med stark "
+     "salthaltsgradient. Ramverk för zonernas salthaltsberoende och artutbredning i modellen."),
+    ("Reusch et al. / BONUS & HELCOM – Nutrient load reduction scenarios (BSAP-underlag)",
+     "Scenariounderlag för hur olika nivåer av kväve- och fosforminskning påverkar status per "
+     "bassäng. Stöd för näringsreglaget och 'minskad övergödning'-scenariot."),
 ]
 
 

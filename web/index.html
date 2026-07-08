@@ -24,9 +24,10 @@
             <div id="share-copied" class="hint"></div>
           </div>
         </div>
-        <label class="lang-pick"><span data-i18n="language">Språk</span>
-          <select id="lang"></select>
-        </label>
+        <div class="lang-pick" role="group" aria-label="Språk / Language">
+          <div id="flags" class="flags"></div>
+          <select id="lang" class="lang-fallback" aria-label="Språk"></select>
+        </div>
       </div>
     </div>
     <p class="tagline" data-i18n="tagline">Simulera hela kretsloppet från näringssalter till säl, jämför strategier under osäkerhet och se vad ett friskare hav är värt.</p>
@@ -35,6 +36,7 @@
       <button class="tab" data-tab="mc" data-i18n="tab_mc">Strategier &amp; Monte Carlo</button>
       <button class="tab" data-tab="eco" data-i18n="tab_eco">Ekonomi</button>
       <button class="tab" data-tab="pyramid" data-i18n="tab_pyramid">Näringspyramid &amp; uttag</button>
+      <button class="tab" data-tab="ekologi" data-i18n="tab_ekologi">Ekologimatris</button>
       <button class="tab" data-tab="verify" data-i18n="tab_verify">Verifiering</button>
       <button class="tab" data-tab="reports" data-i18n="tab_reports">Rapporter &amp; forskning</button>
       <button class="tab" data-tab="ideas" data-i18n="tab_ideas">Idélåda</button>
@@ -244,6 +246,19 @@
       <h3 data-i18n="trofi_over_time">Biomassa per trofinivå över tid</h3>
       <div id="trofi-legend" class="legend"></div>
       <div class="chart" id="chart-trofi"></div>
+    </div>
+  </section>
+
+  <!-- ============ FLIK: EKOLOGIMATRIS ============ -->
+  <section class="view" id="view-ekologi">
+    <div class="panel wide">
+      <h2><span data-i18n="ekologi_title">Ekologisk beroendematris</span></h2>
+      <p class="hint" data-i18n="ekologi_hint">Vem beror på vem i näringsväven. Läs raden: organismen i raden beror på organismerna i kolumnerna (som föda eller näring). Ju mörkare ruta, desto starkare beroende. Kretsloppet sluts: allt som dör blir detritus/kadaver som bryts ned till näring igen.</p>
+      <div id="eco-legend" class="eco-legend"></div>
+      <div class="table-wrap"><div id="eco-matrix"></div></div>
+      <h3 data-i18n="ekologi_salt_title">Salthaltsnisch (nord–syd)</h3>
+      <p class="hint" data-i18n="ekologi_salt_hint">Var längs salthaltsgradienten (norr = sött, söder = salt) varje art trivs bäst. Torsk kräver salt vatten i söder; abborre och gädda är sötvattenarter i norr.</p>
+      <div id="eco-salt"></div>
     </div>
   </section>
 

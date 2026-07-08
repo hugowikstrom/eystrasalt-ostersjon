@@ -29,7 +29,7 @@ load_dotenv()  # läser ANTHROPIC_API_KEY från .env
 
 import security
 from ai import advisor, reports, saved, ideas, exporter, i18n
-from model import scenarios, montecarlo, verification
+from model import scenarios, montecarlo, verification, foodweb
 from model import species as S
 from model.ecosystem import EcoParams, simulate
 from model.zones import ZONES
@@ -129,6 +129,7 @@ def defaults():
         "diet": S.DIET,
         "help": _load_help(),
         "langs": i18n.LANGS,
+        "ekologi": foodweb.matrix(),
         "dagens_halsa": _today_health(),
         "baseline": {
             "years": base.years, "temp_delta": base.temp_delta,

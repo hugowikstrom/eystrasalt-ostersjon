@@ -116,13 +116,60 @@ function lerpColor(cmap, t) {
 }
 
 // ---- i18n ----
+// Flagg-emoji per språkkod (liten, snygg språkväljare högst upp).
+const FLAG = { sv:"🇸🇪", en:"🇬🇧", fi:"🇫🇮", et:"🇪🇪", lv:"🇱🇻", lt:"🇱🇹",
+               ru:"🇷🇺", pl:"🇵🇱", de:"🇩🇪", da:"🇩🇰" };
+const LANG_CACHE = {};   // klient-cache: byte till redan hämtat språk sker momentant
+let currentLang = "sv";
+
 async function loadLang(code) {
-  try {
-    STR = await (await fetch("/api/i18n/" + code)).json();
-  } catch (e) { STR = {}; }
+  // Momentant byte: använd cachad tabell direkt om vi redan hämtat språket.
+  if (LANG_CACHE[code]) {
+    STR = LANG_CACHE[code];
+  } else {
+    try {
+      STR = await (await fetch("/api/i18n/" + code)).json();
+      LANG_CACHE[code] = STR;
+    } catch (e) { STR = LANG_CACHE.sv || {}; }
+  }
+  currentLang = code;
   applyI18n();
   localStorage.setItem("eystra_lang", code);
   document.documentElement.lang = code;
+  const lsel = $("lang"); if (lsel) lsel.value = code;
+  markActiveFlag(code);
+  refreshDynamic();   // rita om dynamiskt innehåll (grafer, listor, matris) på nya språket
+}
+
+function markActiveFlag(code) {
+  document.querySelectorAll("#flags .flag").forEach(b =>
+    b.classList.toggle("active", b.dataset.lang === code));
+}
+
+function buildFlags(langs) {
+  const box = $("flags"); if (!box) return;
+  box.innerHTML = "";
+  langs.forEach(l => {
+    const b = document.createElement("button");
+    b.className = "flag";
+    b.dataset.lang = l.code;
+    b.type = "button";
+    b.title = l.native;
+    b.setAttribute("aria-label", l.native);
+    b.textContent = FLAG[l.code] || l.code.toUpperCase();
+    b.addEventListener("click", () => loadLang(l.code));
+    box.appendChild(b);
+  });
+}
+
+// Rita om det språkberoende, dynamiska innehållet efter ett språkbyte (momentant).
+function refreshDynamic() {
+  try { if (typeof RES !== "undefined" && RES) drawAllCharts(); } catch (e) {}
+  try { renderMatrix(); } catch (e) {}
+  try { renderUser(); } catch (e) {}
+  try { if ($("view-saved") || document.getElementById("saved-list")) loadSavedList(); } catch (e) {}
+  try { if ($("view-reports") && $("view-reports").classList.contains("active")) loadReports(); } catch (e) {}
+  try { if ($("view-ideas") && $("view-ideas").classList.contains("active")) loadIdeas(); } catch (e) {}
 }
 function applyI18n() {
   document.querySelectorAll("[data-i18n]").forEach(el => {
@@ -984,6 +1031,65 @@ async function runVerify() {
   $("verify-run").disabled = false;
 }
 
+// ---- Ekologisk beroendematris ----
+const ECO_GROUP_COLOR = {
+  naring: "#8b6f47", detritus: "#7a6a55", producent: "#4ade80",
+  primarkonsument: "#22d3aa", planktivor: "#38bdf8", kustrovfisk: "#818cf8",
+  rovfisk: "#a78bfa", toppredator: "#f472b6",
+};
+function renderMatrix() {
+  const el = $("eco-matrix");
+  if (!el || !DEF || !DEF.ekologi) return;
+  const E = DEF.ekologi;
+  const ord = E.order, M = E.matris, disp = E.display, grp = E.grupp, emoji = E.emoji || {};
+  const shortName = c => `${emoji[c] || ""} ${disp[c] || c}`.trim();
+  const depOn = T("eco_depends", "beror på");
+  let h = `<table class="eco-mtx"><thead><tr><th class="corner">${T("eco_row_consumer","Konsument \\ Resurs")}</th>`;
+  ord.forEach(c => {
+    h += `<th class="col" style="--g:${ECO_GROUP_COLOR[grp[c]] || "#888"}" title="${escAttr(disp[c])}">${escHtml(emoji[c] || "")}<span>${escHtml(disp[c])}</span></th>`;
+  });
+  h += `</tr></thead><tbody>`;
+  ord.forEach((r, i) => {
+    h += `<tr><th class="rowh" style="--g:${ECO_GROUP_COLOR[grp[r]] || "#888"}">${escHtml(shortName(r))}</th>`;
+    ord.forEach((c, j) => {
+      const w = M[i][j] || 0;
+      if (i === j) { h += `<td class="diag"></td>`; return; }
+      if (!w) { h += `<td></td>`; return; }
+      const a = (0.18 + 0.82 * Math.min(w, 1)).toFixed(2);
+      const tip = `${disp[r]} ${depOn} ${disp[c]} — ${w.toFixed(2)}`;
+      h += `<td class="cell" style="background:rgba(46,160,67,${a})" title="${escAttr(tip)}">${w >= 0.5 ? "●" : ""}</td>`;
+    });
+    h += `</tr>`;
+  });
+  h += `</tbody></table>`;
+  el.innerHTML = h;
+
+  // Grupp-legend
+  const leg = $("eco-legend");
+  if (leg) {
+    leg.innerHTML = Object.keys(E.grupp_namn || {}).map(g =>
+      `<span class="eco-lg"><span class="sw" style="background:${ECO_GROUP_COLOR[g] || "#888"}"></span>${escHtml(E.grupp_namn[g])}</span>`
+    ).join("");
+  }
+  renderSalt();
+}
+function renderSalt() {
+  const el = $("eco-salt");
+  if (!el || !DEF || !DEF.ekologi || !DEF.ekologi.salt) return;
+  const E = DEF.ekologi, salt = E.salt, disp = E.display, emoji = E.emoji || {};
+  const MAXP = 20; // PSU-skala 0..20 (norr→söder)
+  const rows = Object.keys(salt).map(c => {
+    const o = salt[c], opt = o.opt, wdt = o.width;
+    const lo = Math.max(0, opt - wdt), hi = Math.min(MAXP, opt + wdt);
+    const L = (lo / MAXP * 100).toFixed(1), W = ((hi - lo) / MAXP * 100).toFixed(1);
+    const C = (opt / MAXP * 100).toFixed(1);
+    return `<div class="salt-row"><div class="salt-lbl">${escHtml((emoji[c]||"") + " " + (disp[c]||c))}</div>
+      <div class="salt-track"><div class="salt-band" style="left:${L}%;width:${W}%"></div>
+      <div class="salt-mark" style="left:${C}%" title="optimum ${opt} PSU"></div></div></div>`;
+  }).join("");
+  el.innerHTML = `<div class="salt-scale"><span>0 PSU (${T("north","norr")})</span><span>10</span><span>20 PSU (${T("south","söder")})</span></div>${rows}`;
+}
+
 // ---- Publikationer/rapporter (lösenordsskyddad hantering, F-02) ----
 // Att lägga till/ta bort publikationer kräver lösenordet "abborre". Vi frågar en
 // gång per session och skickar det som header. Vid fel nollställs det för nytt försök.
@@ -1234,6 +1340,7 @@ function activateTab(name) {
   $("view-" + name).classList.add("active");
   if (name === "reports") loadReports();
   if (name === "ideas") loadIdeas();
+  if (name === "ekologi") renderMatrix();
   if (name === "pyramid" && RES) { drawPyramid(); drawUttak(); drawTrofi(); }
 }
 function initTabs() {
@@ -1272,9 +1379,10 @@ function applyStrategy(key) {
 async function init() {
   DEF = await (await fetch("/api/defaults")).json();
 
-  // Språkväljare
+  // Språkväljare: flaggor högst upp (momentant byte) + dold select som fallback.
   const lsel = $("lang");
   DEF.langs.forEach(l => lsel.innerHTML += `<option value="${l.code}">${l.native}</option>`);
+  buildFlags(DEF.langs);
   const saved = localStorage.getItem("eystra_lang") || "sv";
   lsel.value = saved;
   await loadLang(saved);

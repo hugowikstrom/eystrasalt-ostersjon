@@ -24,6 +24,7 @@
             <div id="share-copied" class="hint"></div>
           </div>
         </div>
+        <a id="donate-btn" class="donate-btn" href="#" target="_blank" rel="noopener" data-i18n="donate_btn">💚 Donera</a>
         <div class="lang-pick" role="group" aria-label="Språk / Language">
           <div id="flags" class="flags"></div>
           <select id="lang" class="lang-fallback" aria-label="Språk"></select>
@@ -313,6 +314,14 @@
       <h2><span data-i18n="export_title">Exportera simuleringen</span> <span class="help" data-k="export"></span></h2>
       <p class="hint" data-i18n="export_hint">Skapa ett dokument av senaste körningen. Välj format, språk och mottagare.</p>
       <div class="export-grid">
+        <label><span data-i18n="export_mode">Läge / målgrupp</span>
+          <select id="exp-mode">
+            <option value="nyfiken" data-i18n="mode_nyfiken">Nyfiken</option>
+            <option value="generell" selected data-i18n="mode_generell">Generell</option>
+            <option value="politik" data-i18n="mode_politik">Politik</option>
+            <option value="forskare" data-i18n="mode_forskare">Forskare</option>
+          </select>
+        </label>
         <label><span data-i18n="export_format">Format</span>
           <select id="exp-format">
             <option value="sida" data-i18n="format_page">Enkel sida (HTML)</option>
@@ -328,6 +337,7 @@
         </label>
         <label class="chk"><input type="checkbox" id="exp-ai"> <span data-i18n="export_ai_text">Låt AI:n skriva rapporttext</span></label>
       </div>
+      <p id="exp-mode-desc" class="hint"></p>
       <div class="row2">
         <button id="exp-run" class="primary" data-i18n="export_btn">⬇ Skapa &amp; ladda ned</button>
         <button id="exp-mail" data-i18n="email_btn">✉ Öppna e-post till mottagaren</button>
@@ -347,9 +357,9 @@
       <p data-i18n="about_model">17 arter i näringsväven (näringssalter, växtplankton, cyanobakterier, djurplankton, bottenfauna, sill, skarpsill, spigg, abborre, gädda, torsk, lax, sjöfågel/skarv, säl, ytsyre, bottensyre, detritus/kadaver), 6 zoner med salthaltsgradient, verifiering mot litteraturen och ett AI-lager. Referensbiblioteket bygger på HELCOM, ICES, SMHI, Havs- och vattenmyndigheten m.fl.</p>
       <h3 data-i18n="support_title">💙 Stöd projektet</h3>
       <p data-i18n="support_body">Jag driver Eystrasalt ideellt, på min fritid och utan vinstsyfte. Projektet har ändå löpande kostnader — serverdrift, domän och AI-anrop (Claude) för att tolka scenarier, förklara resultat och översätta gränssnittet. Vill du hjälpa till att hålla den digitala tvillingen levande tar jag tacksamt emot stöd som går oavkortat till driften och AI-kostnaderna. Varje bidrag, stort som litet, gör skillnad.</p>
-      <p class="about-support"><a href="mailto:hugo@bigakwa.com?subject=St%C3%B6d%20till%20Eystrasalt" data-i18n="support_contact">✉ Hör av dig så berättar jag hur du kan bidra</a></p>
+      <p class="about-support"><a id="donate-link" href="mailto:hugo.wikstrom@gmail.com?subject=St%C3%B6d%20till%20Eystrasalt" target="_blank" rel="noopener" data-i18n="donate_btn">💚 Donera / stöd projektet</a></p>
       <p class="about-links">
-        <b data-i18n="about_contact">Kontakt</b>: <a href="mailto:hugo@bigakwa.com">hugo@bigakwa.com</a><br>
+        <b data-i18n="about_contact">Kontakt</b>: <a href="mailto:hugo.wikstrom@gmail.com">hugo.wikstrom@gmail.com</a><br>
         <b>GitHub</b>: <a href="https://github.com/hugowikstrom/eystrasalt-ostersjon" target="_blank" rel="noopener">github.com/hugowikstrom/eystrasalt-ostersjon</a><br>
         <span data-i18n="about_license">Licens: open source (MIT). Ingen garanti — se brasklappen ovan.</span>
       </p>

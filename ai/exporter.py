@@ -27,6 +27,54 @@ def _today():
     return datetime.now().strftime("%Y-%m-%d")
 
 
+CONTACT_EMAIL = "hugo.wikstrom@gmail.com"
+
+# Målgruppslägen för rapporten. Styr framing/ton (och AI-textens prompt via advisor).
+MODES = {
+    "nyfiken": {
+        "namn": "Nyfiken",
+        "lead": "Den här rapporten är skriven för dig som är nyfiken på Östersjön — "
+                "enkelt och kort, utan fackspråk."},
+    "generell": {
+        "namn": "Generell",
+        "lead": "En allmän, saklig rapport om körningens resultat."},
+    "politik": {
+        "namn": "Politik & beslut",
+        "lead": "Ett beslutsunderlag för politik och förvaltning: strategier, argument, "
+                "investeringar och samhällsvärden. Ekonomiska värden visas i både euro och "
+                "lokal valuta per land."},
+    "forskare": {
+        "namn": "Forskning",
+        "lead": "En fördjupning för forskare: mekanismer och samband, osäkerheter och "
+                "kunskapsluckor, samt förslag på nästa steg i forskningen."},
+}
+
+
+def _mode(mode):
+    return MODES.get(mode or "generell", MODES["generell"])
+
+
+def _economy_rows(eco, mode):
+    """
+    Bygger ekonomirader (land, eur-sträng, lokal-sträng|None).
+    I politik-läget läggs lokal valuta till per land.
+    """
+    politik = (mode == "politik")
+    rows = []
+    for land, v in eco.items():
+        eur = f"{v} M€"
+        loc = None
+        if politik:
+            try:
+                from model import economics as E
+                amt, ccy = E.local_amount(float(v), land)
+                loc = "—" if ccy == "EUR" else f"{amt:,.0f} M{ccy}".replace(",", " ")
+            except Exception:
+                loc = None
+        rows.append((str(land), eur, loc))
+    return rows
+
+
 # --- HaV-rapportens fasta avsnittstexter -------------------------------------
 # Dispositionen följer Havs- och vattenmyndighetens rapportstruktur. Texterna är
 # sakligt korrekta om modellen; den AI-genererade texten (report_text) läggs i
@@ -133,7 +181,7 @@ def _references():
 
 
 # --- Enkel HTML-sida ---------------------------------------------------------
-def _build_html(summary, report_text, recipient, title, strings):
+def _build_html(summary, report_text, recipient, title, strings, mode="generell"):
     esc = html.escape
     arter = _rows_arter(summary)
     params = _param_items(summary)
@@ -141,29 +189,47 @@ def _build_html(summary, report_text, recipient, title, strings):
     niv = (trofi.get("nivaer_slut") or {})
     uttak = summary.get("uttak_slut") or {}
     mc = summary.get("mc")
+    md = _mode(mode)
 
     S = lambda k: _S(strings, k)
     parts = [f"""<!doctype html><html lang="sv"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{esc(title)}</title>
 <style>
- body{{font-family:system-ui,Segoe UI,Roboto,sans-serif;max-width:820px;margin:0 auto;
-   padding:28px;color:#12293f;background:#f5f9fc;line-height:1.5}}
- h1{{color:#0e7490}} h2{{color:#0e7490;border-bottom:2px solid #cde;padding-bottom:4px;margin-top:28px}}
- h3{{color:#155e75;margin-top:18px}}
- table{{border-collapse:collapse;width:100%;margin:8px 0}}
- th,td{{border:1px solid #cde;padding:6px 9px;text-align:right}} th:first-child,td:first-child{{text-align:left}}
- thead th{{background:#e0f2fe}} .muted{{color:#5b7791}} .badge{{background:#e0f2fe;border-radius:8px;padding:2px 8px}}
- .to{{background:#fff;border:1px solid #cde;border-radius:8px;padding:10px 14px;margin:10px 0}}
- .toc{{background:#fff;border:1px solid #cde;border-radius:8px;padding:10px 18px}}
- .toc a{{color:#0e7490;text-decoration:none}} .cover{{text-align:center;padding:24px 0}}
+ :root{{--ink:#12293f;--sea:#0e7490;--sea2:#155e75;--line:#cfe3ef;--soft:#eef6fb;--muted:#5b7791}}
+ *{{box-sizing:border-box}}
+ body{{font-family:'Georgia','Iowan Old Style',ui-serif,serif;max-width:760px;margin:0 auto;
+   padding:40px 26px 64px;color:var(--ink);background:#fff;line-height:1.7;font-size:17px}}
+ h1,h2,h3{{font-family:system-ui,'Segoe UI',Roboto,sans-serif;line-height:1.25}}
+ h1{{color:var(--sea);font-size:2rem;margin:.2em 0}}
+ h2{{color:var(--sea);border-bottom:2px solid var(--line);padding-bottom:6px;margin-top:2.2em;font-size:1.4rem}}
+ h3{{color:var(--sea2);margin-top:1.5em;font-size:1.12rem}}
+ p{{margin:.7em 0}}
+ table{{border-collapse:collapse;width:100%;margin:14px 0;font-family:system-ui,sans-serif;font-size:.95rem}}
+ th,td{{border:1px solid var(--line);padding:8px 11px;text-align:right}}
+ th:first-child,td:first-child{{text-align:left}}
+ thead th{{background:var(--soft);color:var(--sea2)}}
+ tbody tr:nth-child(even){{background:#fafdff}}
+ .muted{{color:var(--muted)}} .badge{{background:var(--soft);border-radius:8px;padding:3px 10px;font-weight:600}}
+ .to{{background:var(--soft);border-left:4px solid var(--sea);border-radius:6px;padding:10px 14px;margin:14px 0}}
+ .toc{{background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:12px 22px;
+   font-family:system-ui,sans-serif;font-size:.95rem}}
+ .toc a{{color:var(--sea);text-decoration:none}} .toc a:hover{{text-decoration:underline}}
+ .cover{{text-align:center;padding:20px 0 8px;border-bottom:1px solid var(--line);margin-bottom:8px}}
+ .modebadge{{display:inline-block;background:var(--sea);color:#fff;border-radius:999px;
+   padding:4px 14px;font-family:system-ui,sans-serif;font-size:.85rem;font-weight:600;margin-top:6px}}
+ .lead{{font-size:1.05rem;color:var(--sea2);background:var(--soft);border-radius:10px;
+   padding:14px 18px;margin:16px 0}}
+ .summary-card{{background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:6px 22px;margin:14px 0}}
+ @media print{{body{{padding:0;font-size:12pt}} h2{{page-break-after:avoid}} table{{page-break-inside:avoid}}}}
 </style></head><body>
 <div class="cover">
 <h1>🌊 {esc(title)}</h1>
 <p class="muted">{esc(strings.get("undertitel","Simulering av Östersjöns ekosystem — digital tvilling"))}</p>
+<div class="modebadge">{esc(strings.get("mode_"+ (mode or "generell"), md["namn"]))}</div>
 <p class="muted">Rapportstruktur enligt Havs- och vattenmyndighetens mall · Datum: {esc(_today())}</p>
-<p class="muted">Utgivare: Eystrasalt — öppen digital tvilling för Östersjön</p>
-</div>"""]
+</div>
+<p class="lead">{esc(md["lead"])}</p>"""]
     if recipient:
         parts.append(f'<div class="to"><b>{esc(strings.get("till","Till"))}:</b> {esc(recipient)}</div>')
 
@@ -172,13 +238,23 @@ def _build_html(summary, report_text, recipient, title, strings):
 
     # Sammanfattning (AI)
     parts.append(f'<h2 id="sammanfattning">{esc(S("sammanfattning_h"))}</h2>')
+    parts.append('<div class="summary-card">')
     if report_text:
         for para in report_text.split("\n"):
             para = para.strip()
-            if para:
+            if not para:
+                continue
+            # Enkla markdown-rubriker (##/**) → snygga rubriker i rapporten
+            if para.startswith("#"):
+                parts.append(f"<h3>{esc(para.lstrip('# ').strip())}</h3>")
+            elif para.startswith("**") and para.endswith("**") and len(para) > 4:
+                parts.append(f"<h3>{esc(para.strip('*').strip())}</h3>")
+            else:
                 parts.append(f"<p>{esc(para)}</p>")
     else:
-        parts.append("<p class='muted'>(Ingen sammanfattande text genererades för denna körning.)</p>")
+        parts.append("<p class='muted'>(Ingen sammanfattande text genererades för denna "
+                     "körning — kryssa i „Låt AI:n skriva rapporttext” och kör igen.)</p>")
+    parts.append('</div>')
 
     # Innehåll
     parts.append(f'<h2>{esc(S("innehall_h"))}</h2><div class="toc">'
@@ -242,10 +318,21 @@ def _build_html(summary, report_text, recipient, title, strings):
         parts.append(f"<p><b>{esc(str(mc.get('basta_namn','')))}</b></p>")
         eco = mc.get("ekonomi_per_land") or {}
         if eco:
-            parts.append("<table><thead><tr><th>Land</th><th>M€/år</th></tr></thead><tbody>")
-            for land, v in eco.items():
-                parts.append(f"<tr><td>{esc(str(land))}</td><td>{esc(str(v))}</td></tr>")
-            parts.append("</tbody></table>")
+            rows = _economy_rows(eco, mode)
+            if mode == "politik":
+                parts.append("<table><thead><tr><th>Land</th><th>Euro/år</th>"
+                             "<th>Lokal valuta/år</th></tr></thead><tbody>")
+                for land, eur, loc in rows:
+                    parts.append(f"<tr><td>{esc(land)}</td><td>{esc(eur)}</td>"
+                                 f"<td>{esc(loc or '—')}</td></tr>")
+                parts.append("</tbody></table>")
+                parts.append('<p class="muted">Lokal valuta är omräknad från euro med '
+                             'ungefärliga växelkurser — storleksordningar för jämförelse.</p>')
+            else:
+                parts.append("<table><thead><tr><th>Land</th><th>M€/år</th></tr></thead><tbody>")
+                for land, eur, _loc in rows:
+                    parts.append(f"<tr><td>{esc(land)}</td><td>{esc(eur)}</td></tr>")
+                parts.append("</tbody></table>")
 
     # 4 Diskussion
     parts.append(f'<h2 id="diskussion">{esc(S("diskussion_h"))}</h2><p>{esc(SECT["diskussion"])}</p>')
@@ -262,14 +349,15 @@ def _build_html(summary, report_text, recipient, title, strings):
         parts.append(f"<li>{esc(ref)}</li>")
     parts.append("</ol>")
 
-    parts.append('<p class="muted" style="margin-top:30px">Genererad av Eystrasalt — '
-                 'open source digital tvilling för Östersjön. hugo@bigakwa.com</p>')
+    parts.append(f'<p class="muted" style="margin-top:36px;border-top:1px solid var(--line);'
+                 f'padding-top:12px">Genererad av Eystrasalt — open source digital tvilling '
+                 f'för Östersjön. {CONTACT_EMAIL}</p>')
     parts.append("</body></html>")
     return "\n".join(parts).encode("utf-8")
 
 
 # --- PowerPoint --------------------------------------------------------------
-def _build_pptx(summary, report_text, recipient, title, strings):
+def _build_pptx(summary, report_text, recipient, title, strings, mode="generell"):
     from pptx import Presentation
     from pptx.util import Inches, Pt
 
@@ -280,7 +368,9 @@ def _build_pptx(summary, report_text, recipient, title, strings):
     # Titelbild
     s = prs.slides.add_slide(title_layout)
     s.shapes.title.text = title
+    md = _mode(mode)
     sub = strings.get("undertitel", "Simulering av Östersjöns ekosystem")
+    sub += f"\n{md['namn']}"
     if recipient:
         sub += f"\n{strings.get('till','Till')}: {recipient}"
     s.placeholders[1].text = sub
@@ -316,8 +406,8 @@ def _build_pptx(summary, report_text, recipient, title, strings):
     mc = summary.get("mc")
     if mc:
         rows = [f"Bästa strategi: {mc.get('basta_namn','')}"]
-        for land, v in (mc.get("ekonomi_per_land") or {}).items():
-            rows.append(f"{land}: {v} M€/år")
+        for land, eur, loc in _economy_rows(mc.get("ekonomi_per_land") or {}, mode):
+            rows.append(f"{land}: {eur}/år" + (f"  ({loc}/år)" if loc and loc != "—" else ""))
         bullet_slide(strings.get("strategi", "Strategi & ekonomi"), rows)
     if report_text:
         for chunk_i, chunk in enumerate(_chunks(report_text, 6)):
@@ -348,13 +438,14 @@ def _toc_field(doc):
     run._r.addnext(fld)
 
 
-def _build_docx(summary, report_text, recipient, title, strings):
+def _build_docx(summary, report_text, recipient, title, strings, mode="generell"):
     from docx import Document
     from docx.enum.text import WD_ALIGN_PARAGRAPH
     from docx.shared import Pt, RGBColor
 
     doc = Document()
     S = lambda k: _S(strings, k)
+    md = _mode(mode)
 
     # --- Titelsida -----------------------------------------------------------
     for _ in range(6):
@@ -364,7 +455,8 @@ def _build_docx(summary, report_text, recipient, title, strings):
           "Simulering av Östersjöns ekosystem — digital tvilling"))
     sub.alignment = WD_ALIGN_PARAGRAPH.CENTER
     meta = doc.add_paragraph(); meta.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    meta.add_run(f"Rapportstruktur enligt Havs- och vattenmyndighetens mall\n"
+    meta.add_run(f"Läge: {md['namn']}\n"
+                 f"Rapportstruktur enligt Havs- och vattenmyndighetens mall\n"
                  f"Datum: {_today()}\n"
                  + (f"Mottagare: {recipient}\n" if recipient else "")
                  + "Utgivare: Eystrasalt — öppen digital tvilling för Östersjön")
@@ -372,6 +464,7 @@ def _build_docx(summary, report_text, recipient, title, strings):
 
     # --- Förord --------------------------------------------------------------
     doc.add_heading(S("forord_h"), 1)
+    lead = doc.add_paragraph(); lead.add_run(md["lead"]).italic = True
     doc.add_paragraph(SECT["forord"])
 
     # --- Sammanfattning (AI-text) -------------------------------------------
@@ -441,8 +534,19 @@ def _build_docx(summary, report_text, recipient, title, strings):
     if mc:
         doc.add_heading(S("res_strategi_h"), 2)
         doc.add_paragraph(f"Strategi med bäst återhämtning: {mc.get('basta_namn','')}")
-        for land, v in (mc.get("ekonomi_per_land") or {}).items():
-            doc.add_paragraph(f"{land}: {v} M€/år", style="List Bullet")
+        eco = mc.get("ekonomi_per_land") or {}
+        if mode == "politik" and eco:
+            t = doc.add_table(rows=1, cols=3); t.style = "Light Grid Accent 1"
+            h0 = t.rows[0].cells
+            h0[0].text, h0[1].text, h0[2].text = "Land", "Euro/år", "Lokal valuta/år"
+            for land, eur, loc in _economy_rows(eco, mode):
+                c = t.add_row().cells
+                c[0].text, c[1].text, c[2].text = land, eur, (loc or "—")
+            doc.add_paragraph("Lokal valuta omräknad från euro med ungefärliga växelkurser "
+                              "(storleksordningar för jämförelse).").runs[0].italic = True
+        else:
+            for land, eur, _loc in _economy_rows(eco, mode):
+                doc.add_paragraph(f"{land}: {eur}/år", style="List Bullet")
 
     # --- 4 Diskussion --------------------------------------------------------
     doc.add_heading(S("diskussion_h"), 1)
@@ -468,7 +572,7 @@ def _build_docx(summary, report_text, recipient, title, strings):
 
     doc.add_paragraph()
     p = doc.add_paragraph("Genererad av Eystrasalt — open source digital tvilling "
-                          "för Östersjön. hugo@bigakwa.com")
+                          f"för Östersjön. {CONTACT_EMAIL}")
     p.runs[0].font.size = Pt(9)
 
     buf = io.BytesIO(); doc.save(buf); return buf.getvalue()
@@ -476,19 +580,19 @@ def _build_docx(summary, report_text, recipient, title, strings):
 
 # --- Publikt API -------------------------------------------------------------
 def export(fmt, summary, report_text=None, recipient="", title="Eystrasalt — Östersjörapport",
-           strings=None):
+           strings=None, mode="generell"):
     """Bygger dokumentet. Returnerar (bytes, filnamn, mimetype)."""
     strings = strings or {}
     summary = summary or {}
     if fmt == "sida":
-        data = _build_html(summary, report_text, recipient, title, strings)
+        data = _build_html(summary, report_text, recipient, title, strings, mode)
         return data, "eystrasalt.html", "text/html"
     if fmt == "pptx":
-        data = _build_pptx(summary, report_text, recipient, title, strings)
+        data = _build_pptx(summary, report_text, recipient, title, strings, mode)
         return data, "eystrasalt.pptx", \
             "application/vnd.openxmlformats-officedocument.presentationml.presentation"
     if fmt == "rapport":
-        data = _build_docx(summary, report_text, recipient, title, strings)
+        data = _build_docx(summary, report_text, recipient, title, strings, mode)
         return data, "eystrasalt.docx", \
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     raise ValueError(f"Okänt format: {fmt}")

@@ -67,6 +67,15 @@ const PRESETS = {
 const $ = (id) => document.getElementById(id);
 const T = (k, fallback) => STR[k] || fallback || k;
 
+// Donation: sätt DONATE_URL till din Swish-/PayPal-/Buy-Me-a-Coffee-länk.
+// Är den tom faller knappen tillbaka på ett mejl till kontaktadressen.
+const CONTACT_EMAIL = "hugo.wikstrom@gmail.com";
+const DONATE_URL = "";   // ← klistra in din donationslänk här (t.ex. https://buymeacoffee.com/…)
+function donateHref() {
+  return DONATE_URL ||
+    `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent("Stöd till Eystrasalt")}`;
+}
+
 // Säker HTML-escaping av användarinnehåll (F-01: hindrar lagrad XSS när text från
 // idélåda, publikationer, sparade körningar och användarnamn renderas via innerHTML).
 function escHtml(s) {
@@ -166,6 +175,7 @@ function buildFlags(langs) {
 function refreshDynamic() {
   try { if (typeof RES !== "undefined" && RES) drawAllCharts(); } catch (e) {}
   try { renderMatrix(); } catch (e) {}
+  try { updateModeDesc(); } catch (e) {}
   try { renderUser(); } catch (e) {}
   try { if ($("view-saved") || document.getElementById("saved-list")) loadSavedList(); } catch (e) {}
   try { if ($("view-reports") && $("view-reports").classList.contains("active")) loadReports(); } catch (e) {}
@@ -1191,6 +1201,18 @@ function buildExportSummary() {
   }
   return summary;
 }
+const MODE_DESC = {
+  nyfiken:  ["mode_nyfiken_desc",  "Enkelt och kort, utan fackspråk — för dig som är nyfiken på havet."],
+  generell: ["mode_generell_desc", "Allmän, saklig rapport om körningens resultat."],
+  politik:  ["mode_politik_desc",  "Beslutsunderlag: strategier, argument, investeringar och samhällsvärden. Ekonomin visas i både euro och lokal valuta."],
+  forskare: ["mode_forskare_desc", "Fördjupning: mekanismer och samband, osäkerheter och kunskapsluckor, samt nästa steg i forskningen."],
+};
+function updateModeDesc() {
+  const sel = $("exp-mode"), out = $("exp-mode-desc");
+  if (!sel || !out) return;
+  const d = MODE_DESC[sel.value] || MODE_DESC.generell;
+  out.textContent = T(d[0], d[1]);
+}
 async function runExport() {
   const summary = buildExportSummary();
   if (!summary) { $("exp-status").textContent = T("run_first","Kör en simulering först."); return; }
@@ -1199,6 +1221,7 @@ async function runExport() {
   try {
     const r = await fetch("/api/export", { method:"POST", headers:{"Content-Type":"application/json"},
       body: JSON.stringify({ format: $("exp-format").value, lang: $("exp-lang").value,
+        mode: $("exp-mode").value,
         recipient: $("exp-recipient").value.trim(), summary, ai_text: $("exp-ai").checked }) });
     if (!r.ok) { $("exp-status").textContent = (await r.json()).error || "Fel."; $("exp-run").disabled = false; return; }
     const blob = await r.blob();
@@ -1392,6 +1415,13 @@ async function init() {
   const el = $("exp-lang");
   DEF.langs.forEach(l => el.innerHTML += `<option value="${l.code}">${l.native}</option>`);
   el.value = saved;
+
+  // Donationsknappar
+  document.querySelectorAll("#donate-btn, #donate-link").forEach(a => { if (a) a.href = donateHref(); });
+
+  // Export-läge: beskrivning uppdateras vid byte (och vid språkbyte via refreshDynamic)
+  const modeSel = $("exp-mode");
+  if (modeSel) { modeSel.addEventListener("change", updateModeDesc); updateModeDesc(); }
 
   buildTooltips();
   initTabs();

@@ -47,6 +47,22 @@ SERVICES_PER_ZONE_MAX = 700.0
 
 DISCOUNT = 0.03      # diskonteringsränta för nuvärde (framtida värde väger mindre)
 
+# Lokal valuta per land + ungefärlig växelkurs (1 EUR = X lokal valuta).
+# Riktvärden för att kunna visa värden i både euro OCH lokal valuta (politik-läget).
+# Uppdatera vid behov — detta är storleksordningar, inte dagsaktuella kurser.
+LOCAL_CCY = {
+    "Sverige": "SEK", "Finland": "EUR", "Estland": "EUR", "Lettland": "EUR",
+    "Litauen": "EUR", "Ryssland": "RUB", "Polen": "PLN", "Tyskland": "EUR",
+    "Danmark": "DKK",
+}
+EUR_RATE = {"EUR": 1.0, "SEK": 11.3, "DKK": 7.46, "PLN": 4.30, "RUB": 95.0}
+
+
+def local_amount(value_eur, country):
+    """(belopp_i_lokal_valuta, valutakod) för ett eurobelopp och ett land."""
+    ccy = LOCAL_CCY.get(country, "EUR")
+    return value_eur * EUR_RATE.get(ccy, 1.0), ccy
+
 
 def _zone_quality(o2b, cyano):
     """Ekologisk kvalitet 0–1 för en zon (styr ekosystemtjänsternas värde)."""

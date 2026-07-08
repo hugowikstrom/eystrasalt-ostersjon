@@ -23,7 +23,7 @@ Har du kunskap, data, en rättelse eller en önskan — hör av dig eller skicka
 appens **Idélåda**. Tillsammans kan vi förfina en riktigt bra digital tvilling för vårt
 innanhav. 💙
 
-**Kontakt:** hugo@bigakwa.com
+**Kontakt:** hugo.wikstrom@gmail.com
 
 ## Vad modellen innehåller
 
@@ -122,7 +122,7 @@ data/    hjälptexter, språk, rapporter, sparade körningar, idéer
 ## Bidra
 
 Idéer, rättelser, bättre parametrar/data och nya arter är mycket välkomna — via
-pull request, issue, appens Idélåda, eller mejl till hugo@bigakwa.com.
+pull request, issue, appens Idélåda, eller mejl till hugo.wikstrom@gmail.com.
 
 ## Stöd projektet 💙
 
@@ -132,7 +132,7 @@ scenarier, förklara resultat och översätta gränssnittet. Vill du hjälpa til
 hålla den digitala tvillingen levande tar jag tacksamt emot **stöd som går oavkortat
 till driften och AI-kostnaderna**. Varje bidrag, stort som litet, gör skillnad.
 
-Hör av dig så berättar jag hur du kan bidra: **hugo@bigakwa.com**
+Hör av dig så berättar jag hur du kan bidra: **hugo.wikstrom@gmail.com**
 
 ## Licens
 

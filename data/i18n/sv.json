@@ -178,5 +178,18 @@
   "north": "norr",
   "south": "söder",
   "pw_prompt": "Lösenord för att hantera publikationer:",
-  "pw_wrong": "Fel lösenord."
+  "pw_wrong": "Fel lösenord.",
+  "support_title": "💙 Stöd projektet",
+  "support_body": "Jag driver Eystrasalt ideellt, på min fritid och utan vinstsyfte. Projektet har ändå löpande kostnader — serverdrift, domän och AI-anrop (Claude) för att tolka scenarier, förklara resultat och översätta gränssnittet. Vill du hjälpa till att hålla den digitala tvillingen levande tar jag tacksamt emot stöd som går oavkortat till driften och AI-kostnaderna. Varje bidrag, stort som litet, gör skillnad.",
+  "support_contact": "✉ Hör av dig så berättar jag hur du kan bidra",
+  "donate_btn": "💚 Donera",
+  "export_mode": "Läge / målgrupp",
+  "mode_nyfiken": "Nyfiken",
+  "mode_generell": "Generell",
+  "mode_politik": "Politik",
+  "mode_forskare": "Forskare",
+  "mode_nyfiken_desc": "Enkelt och kort, utan fackspråk — för dig som är nyfiken på havet.",
+  "mode_generell_desc": "Allmän, saklig rapport om körningens resultat.",
+  "mode_politik_desc": "Beslutsunderlag: strategier, argument, investeringar och samhällsvärden. Ekonomin visas i både euro och lokal valuta.",
+  "mode_forskare_desc": "Fördjupning: mekanismer och samband, osäkerheter och kunskapsluckor, samt nästa steg i forskningen."
 }

@@ -302,28 +302,53 @@ def suggest_reports(sensitivity=None):
         return f"Kunde inte hämta rapportförslag ({type(e).__name__})."
 
 
-def report_text(summary, lang_name="svenska"):
+# Målgruppsanpassade instruktioner för rapporttexten (export-lägen).
+REPORT_MODE_PROMPTS = {
+    "nyfiken": (
+        "Skriv för en NYFIKEN ALLMÄNHET utan förkunskaper. Var mycket enkel, kort och "
+        "konkret (rubriker + 3–4 korta stycken). Undvik fackspråk; förklara det viktigaste "
+        "med vardagsord och gärna en liknelse. Ta upp: hur mår havet, vad hände i körningen, "
+        "och varför det spelar roll för oss människor. Väck nyfikenhet."),
+    "generell": (
+        "Skriv en kort, professionell och saklig rapport (rubriker + 4–6 stycken). Ta upp: "
+        "utgångsläge, vald strategi och dess effekt på ekosystemets hälsa (10/20/50/100 år om "
+        "det finns), nationalekonomiskt värde, samt var mer forskning behövs. Koppla till kända "
+        "mekanismer."),
+    "politik": (
+        "Skriv ett BESLUTSUNDERLAG för politiker och beslutsfattare (rubriker + 5–7 stycken). "
+        "Fokusera på: politiska strategier och handlingsalternativ, argument för och emot, "
+        "utvecklings- och investeringsfrågor, samhällsnytta och kostnaden för att inte agera. "
+        "Lyft de ekonomiska värdena tydligt och nämn att de redovisas i både euro och lokal "
+        "valuta per land. Var konkret, balanserad och handlingsorienterad; undvik övertolkning."),
+    "forskare": (
+        "Skriv för FORSKARE och sakkunniga (rubriker + 5–7 stycken). Gå djupare på mekanismer "
+        "och samband i näringsväven, återkopplingar och regimskiften. Var extra tydlig med "
+        "OSÄKERHETER och var forskningen är oense eller har kunskapsluckor (utifrån "
+        "känslighetsanalysen). Avsluta med konkreta NÄSTA STEG: vilka studier/mätningar som "
+        "skulle minska osäkerheten mest, i prioritetsordning. Koppla till litteraturen."),
+}
+
+
+def report_text(summary, lang_name="svenska", mode="generell"):
     """
     Skriver en sammanhängande rapporttext (för export) av en simulering/MC-sammanfattning,
-    på valt språk. Faller tillbaka på en enkel text utan AI.
+    på valt språk och anpassad efter målgrupp (mode). Faller tillbaka utan AI.
     """
     client = _client()
     if client is None:
         return None
-    ckey = _cache_key("report_text", lang_name, summary)
+    mode = mode if mode in REPORT_MODE_PROMPTS else "generell"
+    ckey = _cache_key("report_text", lang_name, mode, summary)
     hit = _cache_get(ckey)
     if hit is not None:
         return hit
     prompt = (
-        f"Skriv på {lang_name} en kort, professionell rapport (rubriker + 4–6 stycken) om "
-        "resultatet av en Östersjö-ekosystemsimulering. Ta upp: utgångsläge, vald strategi och "
-        "dess effekt på ekosystemets hälsa (10/20/50/100 år om det finns), nationalekonomiskt "
-        "värde, samt var mer forskning behövs. Var saklig och koppla till kända mekanismer.\n\n"
+        f"Skriv på {lang_name}. {REPORT_MODE_PROMPTS[mode]}\n\n"
         f"Underlag (JSON):\n{json.dumps(summary, ensure_ascii=False)[:6000]}"
     )
     try:
         resp = client.messages.create(
-            model=MODEL, max_tokens=1200, system=_system_blocks(with_reports=True),
+            model=MODEL, max_tokens=1400, system=_system_blocks(with_reports=True),
             messages=[{"role": "user", "content": prompt}],
         )
         return _cache_put(ckey, next(b.text for b in resp.content if b.type == "text").strip())

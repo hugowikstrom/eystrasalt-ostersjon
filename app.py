@@ -299,13 +299,14 @@ def api_export():
     summary = data.get("summary") or {}
     title = data.get("title") or "Eystrasalt — Östersjörapport"
     recipient = (data.get("recipient") or "").strip()
+    mode = data.get("mode") or "generell"
     report_text = None
     if data.get("ai_text"):
-        report_text = advisor.report_text(summary, i18n.LANG_NAME.get(lang, "svenska"))
+        report_text = advisor.report_text(summary, i18n.LANG_NAME.get(lang, "svenska"), mode)
     try:
         blob, filename, mime = exporter.export(
             fmt, summary, report_text=report_text, recipient=recipient,
-            title=title, strings=strings)
+            title=title, strings=strings, mode=mode)
     except Exception as e:
         return jsonify({"error": f"Exportfel: {type(e).__name__}: {e}"}), 400
     return send_file(io.BytesIO(blob), mimetype=mime,

@@ -319,6 +319,17 @@ input[type=text] { width: 100%; background: var(--panel2); color: var(--text);
 .today-health { background: var(--panel2); border: 1px solid var(--line); border-radius: 20px;
   padding: 6px 14px; font-size: 0.9rem; white-space: nowrap; }
 
+/* Stöd-/donationsknappar */
+.about-support { margin: 10px 0 4px; }
+.about-support a { display: inline-block; background: var(--good); color: #04220f;
+  font-weight: 700; text-decoration: none; padding: 10px 18px; border-radius: 10px;
+  transition: filter .12s, transform .12s; }
+.about-support a:hover { filter: brightness(1.08); transform: translateY(-1px); }
+.donate-btn { background: var(--good); color: #04220f; font-weight: 700; text-decoration: none;
+  padding: 6px 13px; border-radius: 999px; font-size: 0.9rem; white-space: nowrap;
+  transition: filter .12s, transform .12s; }
+.donate-btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+
 /* ---- Dela ---- */
 .share-box { position: relative; }
 .share-btn { width: auto; margin: 0; padding: 7px 14px; border-radius: 20px; }

@@ -1157,11 +1157,16 @@ function adminHeaders(extra) {
 async function loadReports() {
   const d = await (await fetch("/api/reports")).json();
   const list = d.rapporter || [];
-  $("rep-list").innerHTML = list.length ? list.map(r => `
-    <div class="rep">
+  $("rep-list").innerHTML = list.length ? list.map(r => {
+    const lank = (r.lank && /^https?:\/\//i.test(r.lank)) ? r.lank : "";
+    const lankBtn = lank
+      ? `<a class="rep-link" href="${escAttr(lank)}" target="_blank" rel="noopener">${T("open_link","Länk »")}</a>`
+      : "";
+    return `<div class="rep">
       <div><div class="rt">${escHtml(r.titel)}</div><div class="rm">${escHtml(r.tillagd)} · ${r.tecken|0} tecken · ${escHtml(r.utdrag)}…</div></div>
-      <button data-del="${r.id|0}">${T("delete","Ta bort")}</button>
-    </div>`).join("") : `<p class="hint">Inga rapporter inlagda ännu.</p>`;
+      <div class="rep-actions">${lankBtn}<button data-del="${r.id|0}">${T("delete","Ta bort")}</button></div>
+    </div>`;
+  }).join("") : `<p class="hint">Inga rapporter inlagda ännu.</p>`;
   $("rep-list").querySelectorAll("button[data-del]").forEach(b =>
     b.addEventListener("click", async () => {
       const resp = await fetch("/api/reports/" + b.dataset.del, { method: "DELETE", headers: adminHeaders() });
@@ -1171,15 +1176,16 @@ async function loadReports() {
 }
 async function addReport() {
   const titel = $("rep-title").value.trim(), text = $("rep-text").value.trim();
+  const lank = ($("rep-link") ? $("rep-link").value.trim() : "");
   if (!text) { $("rep-status").textContent = "Klistra in text först."; return; }
   $("rep-add").disabled = true;
   const resp = await fetch("/api/reports", {
     method: "POST", headers: adminHeaders({"Content-Type":"application/json"}),
-    body: JSON.stringify({ titel, text }),
+    body: JSON.stringify({ titel, text, lank }),
   });
   const r = await resp.json();
   if (resp.status === 403) { adminPw = ""; $("rep-status").textContent = r.error || T("pw_wrong", "Fel lösenord."); }
-  else if (r.ok) { $("rep-title").value = ""; $("rep-text").value = "";
+  else if (r.ok) { $("rep-title").value = ""; $("rep-text").value = ""; if ($("rep-link")) $("rep-link").value = "";
     $("rep-status").textContent = "Tillagd. AI:n väger nu in den."; loadReports(); }
   else $("rep-status").textContent = r.error || "Fel.";
   $("rep-add").disabled = false;

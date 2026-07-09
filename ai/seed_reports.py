@@ -97,6 +97,14 @@ LIBRARY = [
     ("Reusch et al. / BONUS & HELCOM – Nutrient load reduction scenarios (BSAP-underlag)",
      "Scenariounderlag för hur olika nivåer av kväve- och fosforminskning påverkar status per "
      "bassäng. Stöd för näringsreglaget och 'minskad övergödning'-scenariot."),
+    ("Östman et al. (2016) Top-down control as important as nutrient loading. J. Applied Ecology",
+     "Visar att BÅDE övergödning och förlust av rovfisk (gädda, abborre) driver ökningen av "
+     "karpfisk (mört m.fl.), storspigg och trådalger i Östersjöns kustvikar — top-down och "
+     "bottom-up samverkar. Underlag för karpfiskens (mört) dynamik i modellen."),
+    ("Florin, Sundblad & ICES – Skrubbskädda/flundra i Östersjön",
+     "Skrubbskädda/flundra är Östersjöns vanligaste plattfisk: bottenlevande, betar bottenfauna "
+     "(musslor, kräftdjur) och påverkas av salthalt och syrefria bottnar. Underlag för "
+     "plattfiskens roll som länk mellan bottendjur och rovfisk/säl."),
 ]
 
 

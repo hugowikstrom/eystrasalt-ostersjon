@@ -58,10 +58,10 @@ const BIOMASS = ["phyto","cyano","zoo","bentos","sill","skarpsill","spigg","abbo
 
 const PRESETS = {
   plankton: ["N","phyto","cyano","zoo"],
-  fisk: ["sill","skarpsill","spigg","abborre","gadda","torsk","lax"],
-  botten: ["bentos","O2b","det"],
+  fisk: ["sill","skarpsill","spigg","mort","flundra","abborre","gadda","torsk","lax"],
+  botten: ["bentos","flundra","O2b","det"],
   syre: ["O2","O2b"],
-  allt: ["N","phyto","cyano","zoo","bentos","sill","skarpsill","spigg","abborre","gadda","torsk","lax","fagel","sal","O2","O2b"],
+  allt: ["N","phyto","cyano","zoo","bentos","sill","skarpsill","spigg","mort","flundra","abborre","gadda","torsk","lax","fagel","sal","O2","O2b"],
 };
 
 const $ = (id) => document.getElementById(id);
@@ -74,6 +74,49 @@ const DONATE_URL = "";   // ← klistra in din donationslänk här (t.ex. https:
 function donateHref() {
   return DONATE_URL ||
     `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent("Stöd till Eystrasalt")}`;
+}
+
+// Reglage-beteende: klick på pricken → standardvärde, klick vänster/höger om
+// pricken → ett steg ner/upp, dra pricken → flytta fritt (native).
+function enhanceSlider(slider) {
+  const THUMB_PX = 15;
+  let downX = null, moved = false, onThumb = false;
+  const thumbX = () => {
+    const r = slider.getBoundingClientRect();
+    const mn = +slider.min, mx = +slider.max;
+    const frac = mx > mn ? (+slider.value - mn) / (mx - mn) : 0;
+    return r.left + frac * r.width;
+  };
+  const setVal = (v) => {
+    const mn = +slider.min, mx = +slider.max, step = +slider.step || 1;
+    v = Math.min(mx, Math.max(mn, Math.round(v / step) * step));
+    if (v === +slider.value) { slider.dispatchEvent(new Event("input", { bubbles: true })); return; }
+    slider.value = v;
+    slider.dispatchEvent(new Event("input", { bubbles: true }));
+  };
+  slider.addEventListener("pointerdown", (e) => {
+    if (e.button !== 0 && e.pointerType === "mouse") return;
+    downX = e.clientX; moved = false;
+    const tx = thumbX();
+    onThumb = Math.abs(e.clientX - tx) <= THUMB_PX;
+    if (!onThumb) {                       // klick på baren → ett steg mot klicket
+      e.preventDefault();
+      const step = +slider.step || 1;
+      setVal(+slider.value + (e.clientX < tx ? -step : step));
+    }
+  });
+  slider.addEventListener("pointermove", (e) => {
+    if (downX !== null && Math.abs(e.clientX - downX) > 3) moved = true;
+  });
+  const up = () => {
+    if (onThumb && !moved) {              // ren klick på pricken → standardvärde
+      const def = parseFloat(slider.defaultValue);
+      if (!isNaN(def)) setVal(def);
+    }
+    downX = null; onThumb = false; moved = false;
+  };
+  slider.addEventListener("pointerup", up);
+  slider.addEventListener("pointercancel", up);
 }
 
 // Säker HTML-escaping av användarinnehåll (F-01: hindrar lagrad XSS när text från
@@ -1044,8 +1087,8 @@ async function runVerify() {
 // ---- Ekologisk beroendematris ----
 const ECO_GROUP_COLOR = {
   naring: "#8b6f47", detritus: "#7a6a55", producent: "#4ade80",
-  primarkonsument: "#22d3aa", planktivor: "#38bdf8", kustrovfisk: "#818cf8",
-  rovfisk: "#a78bfa", toppredator: "#f472b6",
+  primarkonsument: "#22d3aa", planktivor: "#38bdf8", bottenfisk: "#2dd4bf",
+  kustrovfisk: "#818cf8", rovfisk: "#a78bfa", toppredator: "#f472b6",
 };
 function renderMatrix() {
   const el = $("eco-matrix");
@@ -1114,11 +1157,16 @@ function adminHeaders(extra) {
 async function loadReports() {
   const d = await (await fetch("/api/reports")).json();
   const list = d.rapporter || [];
-  $("rep-list").innerHTML = list.length ? list.map(r => `
-    <div class="rep">
+  $("rep-list").innerHTML = list.length ? list.map(r => {
+    const lank = (r.lank && /^https?:\/\//i.test(r.lank)) ? r.lank : "";
+    const lankBtn = lank
+      ? `<a class="rep-link" href="${escAttr(lank)}" target="_blank" rel="noopener">${T("open_link","Länk »")}</a>`
+      : "";
+    return `<div class="rep">
       <div><div class="rt">${escHtml(r.titel)}</div><div class="rm">${escHtml(r.tillagd)} · ${r.tecken|0} tecken · ${escHtml(r.utdrag)}…</div></div>
-      <button data-del="${r.id|0}">${T("delete","Ta bort")}</button>
-    </div>`).join("") : `<p class="hint">Inga rapporter inlagda ännu.</p>`;
+      <div class="rep-actions">${lankBtn}<button data-del="${r.id|0}">${T("delete","Ta bort")}</button></div>
+    </div>`;
+  }).join("") : `<p class="hint">Inga rapporter inlagda ännu.</p>`;
   $("rep-list").querySelectorAll("button[data-del]").forEach(b =>
     b.addEventListener("click", async () => {
       const resp = await fetch("/api/reports/" + b.dataset.del, { method: "DELETE", headers: adminHeaders() });
@@ -1128,15 +1176,16 @@ async function loadReports() {
 }
 async function addReport() {
   const titel = $("rep-title").value.trim(), text = $("rep-text").value.trim();
+  const lank = ($("rep-link") ? $("rep-link").value.trim() : "");
   if (!text) { $("rep-status").textContent = "Klistra in text först."; return; }
   $("rep-add").disabled = true;
   const resp = await fetch("/api/reports", {
     method: "POST", headers: adminHeaders({"Content-Type":"application/json"}),
-    body: JSON.stringify({ titel, text }),
+    body: JSON.stringify({ titel, text, lank }),
   });
   const r = await resp.json();
   if (resp.status === 403) { adminPw = ""; $("rep-status").textContent = r.error || T("pw_wrong", "Fel lösenord."); }
-  else if (r.ok) { $("rep-title").value = ""; $("rep-text").value = "";
+  else if (r.ok) { $("rep-title").value = ""; $("rep-text").value = ""; if ($("rep-link")) $("rep-link").value = "";
     $("rep-status").textContent = "Tillagd. AI:n väger nu in den."; loadReports(); }
   else $("rep-status").textContent = r.error || "Fel.";
   $("rep-add").disabled = false;
@@ -1451,6 +1500,9 @@ async function init() {
   // #time (tidslinjen) ligger utanför .controls och triggar inte omkörning.
   document.querySelectorAll('.controls input[type=range]:not(#scenario)').forEach(r =>
     r.addEventListener("input", autoRun));
+  // Reglage-beteende (klick prick=standard, klick sida=steg, dra=flytta) på alla
+  // reglage i kontrollpanelen inkl. scenario (tidslinjen #time berörs ej).
+  document.querySelectorAll('.controls input[type=range]').forEach(enhanceSlider);
   syncLabels();
 
   $("run").addEventListener("click", () => { scenarioToCustom(); run(); });

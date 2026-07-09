@@ -259,12 +259,17 @@ td.pos { color: var(--good); } td.neg { color: var(--bad); }
 .check .meta { color: var(--muted); font-size: 0.8rem; margin-top: 3px; }
 
 /* ---- Rapporter ---- */
-input[type=text] { width: 100%; background: var(--panel2); color: var(--text);
+input[type=text], input[type=url], input[type=number], input[type=email], input[type=password] {
+  width: 100%; background: var(--panel2); color: var(--text);
   border: 1px solid var(--line); border-radius: 8px; padding: 8px; margin-bottom: 6px; font-size: 0.9rem; }
 .rep { display: flex; justify-content: space-between; align-items: center; gap: 8px;
   border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; margin: 5px 0; background: var(--panel2); }
 .rep .rt { font-weight: 600; } .rep .rm { color: var(--muted); font-size: 0.78rem; }
 .rep button { width: auto; margin: 0; padding: 4px 8px; font-size: 0.78rem; }
+.rep-actions { display: flex; align-items: center; gap: 6px; flex: none; }
+.rep-link { display: inline-block; padding: 4px 10px; font-size: 0.78rem; font-weight: 600;
+  text-decoration: none; color: #04220f; background: var(--good); border-radius: 7px; white-space: nowrap; }
+.rep-link:hover { filter: brightness(1.08); }
 
 @media (max-width: 1100px) {
   main.view.active { grid-template-columns: 1fr; }

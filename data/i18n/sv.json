@@ -191,5 +191,7 @@
   "mode_nyfiken_desc": "Enkelt och kort, utan fackspråk — för dig som är nyfiken på havet.",
   "mode_generell_desc": "Allmän, saklig rapport om körningens resultat.",
   "mode_politik_desc": "Beslutsunderlag: strategier, argument, investeringar och samhällsvärden. Ekonomin visas i både euro och lokal valuta.",
-  "mode_forskare_desc": "Fördjupning: mekanismer och samband, osäkerheter och kunskapsluckor, samt nästa steg i forskningen."
+  "mode_forskare_desc": "Fördjupning: mekanismer och samband, osäkerheter och kunskapsluckor, samt nästa steg i forskningen.",
+  "open_link": "Länk »",
+  "rep_link_ph": "Länk till dokumentet (valfritt, https://…)"
 }

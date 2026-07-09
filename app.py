@@ -196,7 +196,7 @@ def api_reports():
         return jsonify({"error": "Fel lösenord. Ange lösenordet för att hantera publikationer."}), 403
     data = request.get_json(silent=True) or {}
     try:
-        meta = reports.add_report(data.get("titel"), data.get("text"))
+        meta = reports.add_report(data.get("titel"), data.get("text"), data.get("lank"))
         return jsonify({"ok": True, "rapport": meta})
     except ValueError as e:
         return jsonify({"error": str(e)}), 400

@@ -1,21 +1,26 @@
 """
-AI-lager med Claude (kostnadseffektivt).
+AI-lager (kostnadseffektivt, leverantörsoberoende).
 
-Två funktioner, som bara anropas vid användarklick (aldrig per bildruta):
+Funktioner som bara anropas vid användarklick (aldrig per bildruta):
   1. parse_scenario(text)  — fri svensk text → stress-parametrar (garanterad JSON)
   2. explain_result(...)   — sammanfattade resultat → kort svensk ekolog-förklaring
+  3. suggest_research / suggest_reports / report_text / translate_table
 
-Vi använder Claude Haiku (billigast) och cachar den stora systemprompten med
-prompt caching, så upprepade anrop blir ~90 % billigare. Nyckeln läses från miljön
-(ANTHROPIC_API_KEY). Saknas nyckeln eller nätet degraderar vi snyggt.
+Kostnad hålls nere på flera sätt:
+  * Valet av modell är utbytbart via ai/llm.py (Claude Haiku som default, men även
+    lokala Ollama-modeller eller andra OpenAI-kompatibla API:er — se README).
+  * Identiska förfrågningar besvaras ur cache — både i minnet OCH på disk
+    (data/ai_cache/), så att svaren överlever omstarter/deployer och aldrig
+    debiteras två gånger. Det gäller särskilt de tunga översättningarna.
+  * Prompt caching (cache_control) på anthropic-spåret för upprepade systemblock.
+
+Saknas nyckel/endpoint degraderar vi snyggt (baslinje utan AI), precis som förr.
 """
 
 import json
 import os
 
-from . import reports
-
-MODEL = "claude-haiku-4-5"   # billigast: $1/$5 per Mtok. Byt till claude-opus-4-8 för vassare svar.
+from . import _store, llm, reports
 
 # Systemprompt: modellens "kunskap" om Östersjön och reglagen. Cachas mellan anrop.
 SYSTEM = """Du är en marinekolog specialiserad på Östersjöns ekosystem och hjälper till \
@@ -83,51 +88,55 @@ SCENARIO_SCHEMA = {
 }
 
 
-_CLIENT = None  # återanvänds mellan anrop (skapa inte en ny klient varje gång)
-
-
-def _client():
-    """Returnerar en (cachad) Claude-klient, eller None om nyckel saknas."""
-    global _CLIENT
-    if _CLIENT is not None:
-        return _CLIENT
-    key = os.environ.get("ANTHROPIC_API_KEY")
-    if not key:
-        return None
-    try:
-        import anthropic
-        _CLIENT = anthropic.Anthropic(api_key=key)
-    except Exception:
-        _CLIENT = None
-    return _CLIENT
-
-
-# --- Svarscache på app-nivå --------------------------------------------------
+# --- Svarscache på app-nivå (minne + disk) -----------------------------------
 # Identiska AI-förfrågningar återanvänds istället för att debiteras igen. Svaret
-# blir detsamma, så det är korrekt. Nyckeln inkluderar rapport-kontexten, så att
-# svaren uppdateras när användaren lägger till/tar bort underlag. (Detta är den
-# verksamma cachningen här — Anthropics prompt-cache biter inte eftersom system-
-# prompten är kortare än Haikus minsta cachebara längd på 2048 tokens.)
+# blir detsamma, så det är korrekt. Nyckeln inkluderar rapport-kontexten (så svaren
+# uppdateras när användaren lägger till/tar bort underlag) OCH vald leverantör/modell
+# (så ett Ollama-svar aldrig serveras för en Claude-körning eller tvärtom).
+#
+# Disk-lagret (data/ai_cache/) gör att svaren överlever omstarter och deployer —
+# den verksamma besparingen här, särskilt för de tunga översättningarna. Anthropics
+# prompt-cache biter inte eftersom systemprompten är kortare än Haikus minsta
+# cachebara längd (2048 tokens).
 import hashlib
 
 _RESP_CACHE = {}
 _RESP_CACHE_MAX = 256
+_CACHE_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "ai_cache")
 
 
 def _cache_key(*parts):
     raw = json.dumps(parts, ensure_ascii=False, sort_keys=True, default=str)
     ctx = reports.reports_text() or ""
-    return hashlib.sha1((raw + "\x00" + ctx).encode("utf-8")).hexdigest()
+    tag = f"{llm.provider()}:{llm.model()}"   # byte av modell → färska svar
+    return hashlib.sha1((tag + "\x00" + raw + "\x00" + ctx).encode("utf-8")).hexdigest()
+
+
+def _cache_path(key):
+    return os.path.join(_CACHE_DIR, f"{key}.json")
 
 
 def _cache_get(key):
-    return _RESP_CACHE.get(key)
+    if key in _RESP_CACHE:
+        return _RESP_CACHE[key]
+    try:
+        with open(_cache_path(key), encoding="utf-8") as f:
+            val = json.load(f)["v"]
+    except (OSError, json.JSONDecodeError, KeyError):
+        return None
+    _RESP_CACHE[key] = val   # värm upp minnescachen
+    return val
 
 
 def _cache_put(key, val):
     if len(_RESP_CACHE) >= _RESP_CACHE_MAX:
-        _RESP_CACHE.pop(next(iter(_RESP_CACHE)))   # enkel FIFO-utrensning
+        _RESP_CACHE.pop(next(iter(_RESP_CACHE)))   # enkel FIFO-utrensning i minnet
     _RESP_CACHE[key] = val
+    try:                                            # disk-cachen är best-effort
+        _store.ensure(_CACHE_DIR)
+        _store.write_atomic(_cache_path(key), {"v": val})
+    except OSError:
+        pass
     return val
 
 
@@ -164,8 +173,7 @@ def parse_scenario(text, current=None):
     if current:
         base.update({k: current[k] for k in base if k in current})
 
-    client = _client()
-    if client is None:
+    if not llm.available():
         base["motivering"] = "AI ej tillgänglig (saknar API-nyckel) — använder baslinje."
         return base
 
@@ -179,14 +187,10 @@ def parse_scenario(text, current=None):
               "Uppdatera parametrarna så att de speglar önskemålet. Behåll värden som "
               "inte berörs. Skriv en kort svensk motivering (1–2 meningar) i 'motivering'.")
     try:
-        resp = client.messages.create(
-            model=MODEL,
-            max_tokens=800,
-            system=_system_blocks(),
-            messages=[{"role": "user", "content": prompt}],
-            output_config={"format": {"type": "json_schema", "schema": SCENARIO_SCHEMA}},
-        )
-        text_out = next(b.text for b in resp.content if b.type == "text")
+        # Att mappa fritext → reglage behöver inte rapport-biblioteket: with_reports=False
+        # sparar input-tokens på varje anrop utan att kvaliteten påverkas.
+        text_out = llm.complete(_system_blocks(with_reports=False), prompt,
+                                max_tokens=800, schema=SCENARIO_SCHEMA)
         return _cache_put(ckey, json.loads(text_out))
     except Exception as e:
         base["motivering"] = f"AI-fel ({type(e).__name__}) — använder baslinje."
@@ -198,8 +202,7 @@ def explain_result(summary):
     Får en kompakt sammanfattning (start/slut-värden + reglage) och skriver en kort
     ekologisk förklaring på svenska. summary är en dict; håll den liten (kostnad).
     """
-    client = _client()
-    if client is None:
+    if not llm.available():
         return "AI ej tillgänglig — lägg en API-nyckel i .env för att få tolkningar."
 
     ckey = _cache_key("explain", summary)
@@ -215,13 +218,8 @@ def explain_result(summary):
         f"{json.dumps(summary, ensure_ascii=False, indent=2)}"
     )
     try:
-        resp = client.messages.create(
-            model=MODEL,
-            max_tokens=500,
-            system=_system_blocks(),
-            messages=[{"role": "user", "content": prompt}],
-        )
-        return _cache_put(ckey, next(b.text for b in resp.content if b.type == "text").strip())
+        out = llm.complete(_system_blocks(), prompt, max_tokens=500)
+        return _cache_put(ckey, out.strip())
     except Exception as e:
         return f"Kunde inte hämta AI-förklaring ({type(e).__name__})."
 
@@ -231,8 +229,7 @@ def suggest_research(sensitivity, best=None):
     Får känslighetsanalysen (vilka osäkra parametrar som styr utfallet mest) och
     föreslår VAR mer forskning behövs, på svenska. Väger in inlagda rapporter.
     """
-    client = _client()
-    if client is None:
+    if not llm.available():
         # Utan AI: räkna upp de känsligaste parametrarna som forskningsbehov.
         rows = "\n".join(f"- {s['namn']} (r={s['korrelation']}, {s['source']})"
                          for s in sensitivity[:5])
@@ -255,13 +252,8 @@ def suggest_research(sensitivity, best=None):
         f"Bästa strategi: {json.dumps(best, ensure_ascii=False) if best else 'okänd'}"
     )
     try:
-        resp = client.messages.create(
-            model=MODEL,
-            max_tokens=700,
-            system=_system_blocks(),
-            messages=[{"role": "user", "content": prompt}],
-        )
-        return _cache_put(ckey, next(b.text for b in resp.content if b.type == "text").strip())
+        out = llm.complete(_system_blocks(), prompt, max_tokens=700)
+        return _cache_put(ckey, out.strip())
     except Exception as e:
         return f"Kunde inte hämta forskningsförslag ({type(e).__name__})."
 
@@ -272,10 +264,9 @@ def suggest_reports(sensitivity=None):
     simuleringen blir bättre förankrad. Väger in redan inlagda rapporter (för att
     inte föreslå dubbletter). Returnerar en kort svensk lista.
     """
-    client = _client()
     have = reports.list_reports()
     have_titles = ", ".join(r["titel"] for r in have) or "inga ännu"
-    if client is None:
+    if not llm.available():
         return ("AI ej tillgänglig. Klassiska underlag att lägga in: HELCOM State of the "
                 "Baltic Sea, ICES WGBFAS (torsk/sill/skarpsill), Conley et al. 2009 (hypoxi), "
                 "Casini et al. (regimskifte), Eklöf/Bergström (spigg vs abborre/gädda).")
@@ -293,11 +284,8 @@ def suggest_reports(sensitivity=None):
         f"Känslighetsanalys (om finns): {json.dumps(sensitivity, ensure_ascii=False) if sensitivity else 'saknas'}"
     )
     try:
-        resp = client.messages.create(
-            model=MODEL, max_tokens=700, system=_system_blocks(),
-            messages=[{"role": "user", "content": prompt}],
-        )
-        return _cache_put(ckey, next(b.text for b in resp.content if b.type == "text").strip())
+        out = llm.complete(_system_blocks(), prompt, max_tokens=700)
+        return _cache_put(ckey, out.strip())
     except Exception as e:
         return f"Kunde inte hämta rapportförslag ({type(e).__name__})."
 
@@ -307,8 +295,7 @@ def report_text(summary, lang_name="svenska"):
     Skriver en sammanhängande rapporttext (för export) av en simulering/MC-sammanfattning,
     på valt språk. Faller tillbaka på en enkel text utan AI.
     """
-    client = _client()
-    if client is None:
+    if not llm.available():
         return None
     ckey = _cache_key("report_text", lang_name, summary)
     hit = _cache_get(ckey)
@@ -322,16 +309,13 @@ def report_text(summary, lang_name="svenska"):
         f"Underlag (JSON):\n{json.dumps(summary, ensure_ascii=False)[:6000]}"
     )
     try:
-        resp = client.messages.create(
-            model=MODEL, max_tokens=1200, system=_system_blocks(with_reports=True),
-            messages=[{"role": "user", "content": prompt}],
-        )
-        return _cache_put(ckey, next(b.text for b in resp.content if b.type == "text").strip())
+        out = llm.complete(_system_blocks(with_reports=True), prompt, max_tokens=1200)
+        return _cache_put(ckey, out.strip())
     except Exception:
         return None
 
 
-def _translate_batch(client, strings, lang_name, lang_code):
+def _translate_batch(strings, lang_name, lang_code):
     """Översätter EN batch nycklar. Returnerar dict eller None vid fel."""
     schema = {
         "type": "object",
@@ -346,13 +330,8 @@ def _translate_batch(client, strings, lang_name, lang_code):
         f"{json.dumps(strings, ensure_ascii=False)}"
     )
     try:
-        resp = client.messages.create(
-            model=MODEL, max_tokens=4000,
-            system=[{"type": "text", "text": "Du är en professionell översättare."}],
-            messages=[{"role": "user", "content": prompt}],
-            output_config={"format": {"type": "json_schema", "schema": schema}},
-        )
-        return json.loads(next(b.text for b in resp.content if b.type == "text"))
+        system = [{"type": "text", "text": "Du är en professionell översättare."}]
+        return json.loads(llm.complete(system, prompt, max_tokens=4000, schema=schema))
     except Exception:
         return None
 
@@ -363,14 +342,13 @@ def translate_table(strings, lang_name, lang_code, batch=25):
     spränger den långa tabellen token-taket). Returnerar {nyckel: översättning}
     eller None om AI saknas / alla batchar misslyckas.
     """
-    client = _client()
-    if client is None:
+    if not llm.available():
         return None
     keys = list(strings.keys())
     out = {}
     for i in range(0, len(keys), batch):
         chunk = {k: strings[k] for k in keys[i:i + batch]}
-        res = _translate_batch(client, chunk, lang_name, lang_code)
+        res = _translate_batch(chunk, lang_name, lang_code)
         if res:
             out.update(res)
     return out or None

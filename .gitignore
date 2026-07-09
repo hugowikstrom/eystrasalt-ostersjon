@@ -1,6 +1,8 @@
 # Hemligheter — får ALDRIG checkas in
 .env
 .env.*
+# mallen (utan riktiga nycklar) SKA checkas in:
+!.env.example
 
 # Python
 .venv/
@@ -15,6 +17,7 @@ data/reports/
 data/saved/
 data/ideas/
 data/mc_cache/
+data/ai_cache/
 data/i18n/*.json
 !data/i18n/sv.json
 

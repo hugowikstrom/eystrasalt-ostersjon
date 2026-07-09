@@ -37,8 +37,10 @@ innanhav. 💙
   intern fosforbelastning, klimatuppvärmningens effekt på skiktning och syre.
 - **Verifiering mot litteraturen** (8 kontroller med källhänvisning) och en inbyggd
   känslighetsanalys som pekar ut var mer forskning behövs.
-- **AI-lager (Claude Haiku)** för att tolka scenarier i fritext, förklara resultat,
-  föreslå forskning/rapporter och översätta gränssnittet.
+- **AI-lager** för att tolka scenarier i fritext, förklara resultat, föreslå
+  forskning/rapporter och översätta gränssnittet. Leverantören är utbytbar (Claude
+  Haiku som standard, eller en **lokal Ollama-modell / annat OpenAI-kompatibelt API**
+  helt utan API-kostnad) och svaren cachas på disk så de aldrig debiteras två gånger.
 
 Referensbiblioteket i `data/reports/` bygger på HELCOM, ICES, SMHI, Havs- och
 vattenmyndigheten m.fl. (egna sammanfattningar, inte upphovsrättsskyddad fulltext).
@@ -54,12 +56,34 @@ python app.py           # → http://localhost:5800
 
 **AI-funktionerna är valfria.** Simuleringen, graferna, Monte Carlo, ekonomin och
 verifieringen fungerar helt utan nyckel. Vill du ha AI:n (tolka scenarier i fritext,
-förklara resultat, föreslå forskning, översätta gränssnittet) — lägg in din **egen**
-Anthropic-nyckel:
+förklara resultat, föreslå forskning, översätta gränssnittet) har du två vägar:
 
 ```bash
-cp .env.example .env    # fyll sedan i ANTHROPIC_API_KEY=din-egen-nyckel
+cp .env.example .env    # välj sedan leverantör i .env
 ```
+
+**Alternativ A — Claude (standard).** Lägg in din **egen** Anthropic-nyckel
+(`ANTHROPIC_API_KEY=...`). Claude Haiku är billigast ($1/$5 per Mtok).
+
+**Alternativ B — lokalt & gratis via Ollama** (eller annat OpenAI-kompatibelt API).
+Ingen API-kostnad, funkar offline:
+
+```bash
+# installera Ollama (ollama.com) och hämta en modell med bra svenska:
+ollama pull llama3.1        # eller: qwen2.5, mistral-small
+# i .env:
+AI_PROVIDER=openai
+AI_MODEL=llama3.1
+AI_BASE_URL=http://localhost:11434/v1
+```
+
+Samma `AI_PROVIDER=openai`-spår når även OpenAI, Groq, Together, Mistral m.fl. — sätt
+bara `AI_BASE_URL`, `AI_MODEL` och `AI_API_KEY` därefter. Se `.env.example`.
+
+**Kostnad hålls nere** genom att alla AI-svar cachas på disk (`data/ai_cache/`) och
+återanvänds vid identiska förfrågningar — särskilt de tunga översättningarna betalas
+bara en gång. Cachenyckeln inkluderar vald modell, så byter du leverantör får du
+färska svar.
 
 Inga lösenord eller nycklar ligger i koden — `.env` är i `.gitignore` och checkas
 aldrig in. Var och en som kör projektet använder sin egen (valfria) nyckel.
@@ -94,7 +118,8 @@ Appen är härdad enligt en säkerhetsgranskning (se `security.py` och
 - All användartext escapas i frontend (`escHtml`) innan den renderas → ingen lagrad XSS.
 
 Miljövariabler: `APP_ENV`, `ADMIN_PASSWORD`, `ALLOWED_ORIGINS`, `MAX_CONTENT_KB`,
-`FLASK_DEBUG`, `PORT`, `ANTHROPIC_API_KEY`.
+`FLASK_DEBUG`, `PORT`, `ANTHROPIC_API_KEY`. AI-leverantör: `AI_PROVIDER`,
+`AI_MODEL`, `AI_API_KEY`, `AI_BASE_URL`, `AI_TIMEOUT` (se `.env.example`).
 
 ```bash
 APP_ENV=production ADMIN_PASSWORD=ditt-hemliga-ord \

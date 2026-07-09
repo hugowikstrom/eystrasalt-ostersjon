@@ -76,6 +76,49 @@ function donateHref() {
     `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent("Stöd till Eystrasalt")}`;
 }
 
+// Reglage-beteende: klick på pricken → standardvärde, klick vänster/höger om
+// pricken → ett steg ner/upp, dra pricken → flytta fritt (native).
+function enhanceSlider(slider) {
+  const THUMB_PX = 15;
+  let downX = null, moved = false, onThumb = false;
+  const thumbX = () => {
+    const r = slider.getBoundingClientRect();
+    const mn = +slider.min, mx = +slider.max;
+    const frac = mx > mn ? (+slider.value - mn) / (mx - mn) : 0;
+    return r.left + frac * r.width;
+  };
+  const setVal = (v) => {
+    const mn = +slider.min, mx = +slider.max, step = +slider.step || 1;
+    v = Math.min(mx, Math.max(mn, Math.round(v / step) * step));
+    if (v === +slider.value) { slider.dispatchEvent(new Event("input", { bubbles: true })); return; }
+    slider.value = v;
+    slider.dispatchEvent(new Event("input", { bubbles: true }));
+  };
+  slider.addEventListener("pointerdown", (e) => {
+    if (e.button !== 0 && e.pointerType === "mouse") return;
+    downX = e.clientX; moved = false;
+    const tx = thumbX();
+    onThumb = Math.abs(e.clientX - tx) <= THUMB_PX;
+    if (!onThumb) {                       // klick på baren → ett steg mot klicket
+      e.preventDefault();
+      const step = +slider.step || 1;
+      setVal(+slider.value + (e.clientX < tx ? -step : step));
+    }
+  });
+  slider.addEventListener("pointermove", (e) => {
+    if (downX !== null && Math.abs(e.clientX - downX) > 3) moved = true;
+  });
+  const up = () => {
+    if (onThumb && !moved) {              // ren klick på pricken → standardvärde
+      const def = parseFloat(slider.defaultValue);
+      if (!isNaN(def)) setVal(def);
+    }
+    downX = null; onThumb = false; moved = false;
+  };
+  slider.addEventListener("pointerup", up);
+  slider.addEventListener("pointercancel", up);
+}
+
 // Säker HTML-escaping av användarinnehåll (F-01: hindrar lagrad XSS när text från
 // idélåda, publikationer, sparade körningar och användarnamn renderas via innerHTML).
 function escHtml(s) {
@@ -1451,6 +1494,9 @@ async function init() {
   // #time (tidslinjen) ligger utanför .controls och triggar inte omkörning.
   document.querySelectorAll('.controls input[type=range]:not(#scenario)').forEach(r =>
     r.addEventListener("input", autoRun));
+  // Reglage-beteende (klick prick=standard, klick sida=steg, dra=flytta) på alla
+  // reglage i kontrollpanelen inkl. scenario (tidslinjen #time berörs ej).
+  document.querySelectorAll('.controls input[type=range]').forEach(enhanceSlider);
   syncLabels();
 
   $("run").addEventListener("click", () => { scenarioToCustom(); run(); });

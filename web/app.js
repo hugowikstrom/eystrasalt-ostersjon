@@ -58,10 +58,10 @@ const BIOMASS = ["phyto","cyano","zoo","bentos","sill","skarpsill","spigg","abbo
 
 const PRESETS = {
   plankton: ["N","phyto","cyano","zoo"],
-  fisk: ["sill","skarpsill","spigg","abborre","gadda","torsk","lax"],
-  botten: ["bentos","O2b","det"],
+  fisk: ["sill","skarpsill","spigg","flundra","abborre","gadda","torsk","lax"],
+  botten: ["bentos","flundra","O2b","det"],
   syre: ["O2","O2b"],
-  allt: ["N","phyto","cyano","zoo","bentos","sill","skarpsill","spigg","abborre","gadda","torsk","lax","fagel","sal","O2","O2b"],
+  allt: ["N","phyto","cyano","zoo","bentos","sill","skarpsill","spigg","flundra","abborre","gadda","torsk","lax","fagel","sal","O2","O2b"],
 };
 
 const $ = (id) => document.getElementById(id);
@@ -1044,8 +1044,8 @@ async function runVerify() {
 // ---- Ekologisk beroendematris ----
 const ECO_GROUP_COLOR = {
   naring: "#8b6f47", detritus: "#7a6a55", producent: "#4ade80",
-  primarkonsument: "#22d3aa", planktivor: "#38bdf8", kustrovfisk: "#818cf8",
-  rovfisk: "#a78bfa", toppredator: "#f472b6",
+  primarkonsument: "#22d3aa", planktivor: "#38bdf8", bottenfisk: "#2dd4bf",
+  kustrovfisk: "#818cf8", rovfisk: "#a78bfa", toppredator: "#f472b6",
 };
 function renderMatrix() {
   const el = $("eco-matrix");

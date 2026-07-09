@@ -96,6 +96,7 @@ def _precompute(p: EcoParams):
         sr_spigg=np.array([S.salinity_response("spigg", s) for s in sal]),
         sr_abborre=np.array([S.salinity_response("abborre", s) for s in sal]),
         sr_gadda=np.array([S.salinity_response("gadda", s) for s in sal]),
+        sr_flundra=np.array([S.salinity_response("flundra", s) for s in sal]),
         sr_torsk=np.array([S.salinity_response("torsk", s) for s in sal]),
         sr_lax=np.array([S.salinity_response("lax", s) for s in sal]),
         sr_fagel=np.array([S.salinity_response("fagel", s) for s in sal]),
@@ -121,6 +122,7 @@ def _rhs(t, y, p: EcoParams, pre):
     Z = Y[:, CI["zoo"]]; bentos = Y[:, CI["bentos"]]
     sill = Y[:, CI["sill"]]; skarp = Y[:, CI["skarpsill"]]; spigg = Y[:, CI["spigg"]]
     abborre = Y[:, CI["abborre"]]; gadda = Y[:, CI["gadda"]]
+    flundra = Y[:, CI["flundra"]]
     torsk = Y[:, CI["torsk"]]; lax = Y[:, CI["lax"]]
     fagel = Y[:, CI["fagel"]]; sal_b = Y[:, CI["sal"]]
     O2 = Y[:, CI["O2"]]; O2b = Y[:, CI["O2b"]]; det = Y[:, CI["det"]]
@@ -157,6 +159,14 @@ def _rhs(t, y, p: EcoParams, pre):
     cons_skarp = fish_cons("skarpsill", pre["sr_skarp"], skarp)
     cons_spigg = fish_cons("spigg", pre["sr_spigg"], spigg)
     zoo_pred = cons_sill + cons_skarp + cons_spigg
+
+    # --- Flundra (plattfisk) betar bottenfauna + lite detritus (bottenlevande) ---
+    ffl = S.FISH["flundra"]
+    prey_fl = bentos + 0.2 * det + eps
+    cons_fl = ffl["cons"] * qt * pre["sr_flundra"] * (prey_fl / (ffl["khalf"] + prey_fl)) * flundra
+    flundra_growth = ffl["eff"] * cons_fl
+    loss_bentos_fl = cons_fl * bentos / prey_fl
+    loss_det_fl = cons_fl * (0.2 * det) / prey_fl
 
     # --- Torsk äter planktonätarna (även spigg och bottenfauna) ---
     ft = S.FISH["torsk"]
@@ -212,13 +222,14 @@ def _rhs(t, y, p: EcoParams, pre):
 
     # --- Säl äter fisk (inkl. lax) ---
     fs = S.FISH["sal"]
-    prey_s = 0.6 * sill + 1.0 * torsk + 0.4 * skarp + 0.5 * lax + eps
+    prey_s = 0.6 * sill + 1.0 * torsk + 0.4 * skarp + 0.5 * lax + 0.3 * flundra + eps
     cons_s = fs["cons"] * qt * (prey_s / (fs["khalf"] + prey_s)) * sal_b
     sal_growth = fs["eff"] * cons_s
     loss_sill_s = cons_s * (0.6 * sill) / prey_s
     loss_torsk_s = cons_s * (1.0 * torsk) / prey_s
     loss_skarp_s = cons_s * (0.4 * skarp) / prey_s
     loss_lax_s = cons_s * (0.5 * lax) / prey_s
+    loss_flundra_s = cons_s * (0.3 * flundra) / prey_s
 
     # --- Hypoxi: torsk lever nära botten → styrs av BOTTENsyret; djurplankton
     #     i den fria vattenmassan av ytsyret ---
@@ -232,6 +243,7 @@ def _rhs(t, y, p: EcoParams, pre):
     fish_spigg = fsh.get("spigg", 0.0) * spigg
     fish_abborre = fsh.get("abborre", 0.0) * abborre
     fish_gadda = fsh.get("gadda", 0.0) * gadda
+    fish_flundra = fsh.get("flundra", 0.0) * flundra
     fish_torsk = fsh.get("torsk", 0.0) * torsk
     fish_lax = fsh.get("lax", 0.0) * lax
 
@@ -241,6 +253,9 @@ def _rhs(t, y, p: EcoParams, pre):
     m_spigg = S.FISH["spigg"]["mort"] * spigg + 0.03 * spigg ** 2
     m_abborre = S.FISH["abborre"]["mort"] * abborre + 0.04 * abborre ** 2
     m_gadda = S.FISH["gadda"]["mort"] * gadda + 0.05 * gadda ** 2
+    # Flundra är bottenlevande → drabbas av syrefria bottnar (som torsken)
+    m_flundra = (S.FISH["flundra"]["mort"] * flundra + 0.45 * flundra ** 2
+                 + HYP_MORT_TORSK * hyp_bottom * flundra)
     m_torsk = S.FISH["torsk"]["mort"] * torsk + 0.03 * torsk ** 2 + HYP_MORT_TORSK * hyp_bottom * torsk
     m_lax = S.FISH["lax"]["mort"] * lax + 0.06 * lax ** 2
     # Bottenfaunan dör på syrefria bottnar (styrs av BOTTENsyret) → döda bottnar
@@ -259,7 +274,7 @@ def _rhs(t, y, p: EcoParams, pre):
 
     # Kretsloppet: ALLT som dör (inkl. säl och fågel) + osmält föda → detritus/kadaver
     det_in = (S.M_PHYTO * P + S.M_CYANO * CY + m_zoo + m_bentos
-              + m_sill + m_skarp + m_spigg + m_abborre + m_gadda + m_torsk
+              + m_sill + m_skarp + m_spigg + m_abborre + m_gadda + m_flundra + m_torsk
               + m_lax + m_fagel + m_sal
               + (1 - S.ASSIM_ZOO) * graze
               + (1 - S.BENTOS_ASSIM) * filt
@@ -268,6 +283,7 @@ def _rhs(t, y, p: EcoParams, pre):
               + (1 - S.FISH["spigg"]["eff"]) * cons_spigg
               + (1 - fa["eff"]) * cons_a
               + (1 - fg["eff"]) * cons_g
+              + (1 - ffl["eff"]) * cons_fl
               + (1 - ft["eff"]) * cons_t
               + (1 - fl["eff"]) * cons_l
               + (1 - ff["eff"]) * cons_f)
@@ -289,23 +305,24 @@ def _rhs(t, y, p: EcoParams, pre):
     d[:, CI["phyto"]] = gP - grazeP - filtP - S.M_PHYTO * P
     d[:, CI["cyano"]] = gCY - grazeCY - S.M_CYANO * CY
     d[:, CI["zoo"]] = zoo_growth - zoo_pred - loss_zoo_a - m_zoo
-    d[:, CI["bentos"]] = bentos_growth - loss_bentos_t - loss_bentos_f - m_bentos
+    d[:, CI["bentos"]] = bentos_growth - loss_bentos_t - loss_bentos_f - loss_bentos_fl - m_bentos
     d[:, CI["sill"]] = S.FISH["sill"]["eff"] * cons_sill - loss_sill_t - loss_sill_s - loss_sill_g - loss_sill_f - loss_sill_l - m_sill - fish_sill
     d[:, CI["skarpsill"]] = S.FISH["skarpsill"]["eff"] * cons_skarp - loss_skarp_t - loss_skarp_s - loss_skarp_a - loss_skarp_l - m_skarp - fish_skarp
     d[:, CI["spigg"]] = S.FISH["spigg"]["eff"] * cons_spigg - loss_spigg_t - loss_spigg_a - loss_spigg_g - loss_spigg_f - loss_spigg_l - m_spigg - fish_spigg
     d[:, CI["abborre"]] = abborre_growth - loss_abborre_g - loss_abborre_f - m_abborre - fish_abborre
     d[:, CI["gadda"]] = gadda_growth - m_gadda - fish_gadda
+    d[:, CI["flundra"]] = flundra_growth - loss_flundra_s - m_flundra - fish_flundra
     d[:, CI["torsk"]] = torsk_growth - loss_torsk_s - m_torsk - fish_torsk
     d[:, CI["lax"]] = lax_growth - loss_lax_s - m_lax - fish_lax
     d[:, CI["fagel"]] = fagel_growth - m_fagel
     d[:, CI["sal"]] = sal_growth - m_sal
     d[:, CI["O2"]] = o2_prod + o2_reaer - S.SURF_LOSS * vent
     d[:, CI["O2b"]] = vent - o2_demand
-    d[:, CI["det"]] = det_in - decomp - filtD - S.DET_BURIAL * det
+    d[:, CI["det"]] = det_in - decomp - filtD - loss_det_fl - S.DET_BURIAL * det
 
     # --- Liten invandring: håller arter från att dö ut permanent (kan återhämtas) ---
     for c in ["phyto", "cyano", "zoo", "bentos", "sill", "skarpsill", "spigg",
-              "abborre", "gadda", "torsk", "lax", "fagel", "sal"]:
+              "abborre", "gadda", "flundra", "torsk", "lax", "fagel", "sal"]:
         d[:, CI[c]] += S.IMMIG
 
     # --- Vattenutbyte mellan zoner (blandar löst näring + plankton) ---
@@ -322,7 +339,7 @@ TROPHIC = [
     ("Näring (näringssalter)", ["N"]),
     ("Primärproducenter", ["phyto", "cyano"]),
     ("Djurplankton & bottenfauna", ["zoo", "bentos"]),
-    ("Planktonätande fisk", ["sill", "skarpsill", "spigg"]),
+    ("Plankton- & bottenätande fisk", ["sill", "skarpsill", "spigg", "flundra"]),
     ("Kustrovfisk (abborre/gädda)", ["abborre", "gadda"]),
     ("Rovfisk (torsk/lax)", ["torsk", "lax"]),
     ("Toppredatorer (fågel/säl)", ["fagel", "sal"]),
@@ -397,6 +414,7 @@ def default_initial_state():
         # Kustrovfisk startar i bräckt/sött vatten (norr och kustnära)
         Y[zi, CI["abborre"]] = max(0.05, 3.0 * S.salinity_response("abborre", s))
         Y[zi, CI["gadda"]] = max(0.03, 2.0 * S.salinity_response("gadda", s))
+        Y[zi, CI["flundra"]] = max(0.05, 1.0 * S.salinity_response("flundra", s))
         Y[zi, CI["torsk"]] = max(0.05, 3.0 * S.salinity_response("torsk", s) * S.cod_reproduction_factor(s))
         Y[zi, CI["lax"]] = max(0.03, 1.0 * S.salinity_response("lax", s))
         Y[zi, CI["fagel"]] = 0.4
@@ -487,7 +505,7 @@ if __name__ == "__main__":
     def summ(res, label):
         print(f"\n=== {label} (årsmedel sista året) ===")
         for c in ["phyto", "cyano", "zoo", "bentos", "sill", "skarpsill", "spigg",
-                  "abborre", "gadda", "torsk", "lax", "fagel", "sal"]:
+                  "flundra", "abborre", "gadda", "torsk", "lax", "fagel", "sal"]:
             print(f"  {S.DISPLAY[c]:14s}: {tot_last_year(res, c):7.2f}")
         print("  Bottensyre per zon:")
         for z in res["zones"]:

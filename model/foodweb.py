@@ -16,7 +16,7 @@ from .species import DIET, DISPLAY, FISH, salinity_response
 
 # Trofisk ordning, näringsbas → toppredator (syre-kompartmenten ingår ej i väven).
 ORDER = ["N", "det", "phyto", "cyano", "zoo", "bentos", "sill", "skarpsill",
-         "spigg", "abborre", "gadda", "torsk", "lax", "fagel", "sal"]
+         "spigg", "flundra", "abborre", "gadda", "torsk", "lax", "fagel", "sal"]
 
 # Funktionell grupp per kompartment (för färgläggning och gruppering i webben).
 GROUP = {
@@ -24,6 +24,7 @@ GROUP = {
     "phyto": "producent", "cyano": "producent",
     "zoo": "primarkonsument", "bentos": "primarkonsument",
     "sill": "planktivor", "skarpsill": "planktivor", "spigg": "planktivor",
+    "flundra": "bottenfisk",
     "abborre": "kustrovfisk", "gadda": "kustrovfisk",
     "torsk": "rovfisk", "lax": "rovfisk",
     "fagel": "toppredator", "sal": "toppredator",
@@ -32,13 +33,14 @@ GROUP = {
 GROUP_NAMN = {
     "naring": "Näring", "detritus": "Detritus/kadaver", "producent": "Producent",
     "primarkonsument": "Primärkonsument", "planktivor": "Planktonätare",
+    "bottenfisk": "Bottenfisk (plattfisk)",
     "kustrovfisk": "Kustrovfisk", "rovfisk": "Rovfisk", "toppredator": "Toppredator",
 }
 
 EMOJI = {
     "N": "🧪", "det": "🍂", "phyto": "🌱", "cyano": "🦠", "zoo": "🦐",
     "bentos": "🦪", "sill": "🐟", "skarpsill": "🐠", "spigg": "🐡",
-    "abborre": "🎣", "gadda": "🐊", "torsk": "🐋", "lax": "🐟",
+    "flundra": "🥮", "abborre": "🎣", "gadda": "🐊", "torsk": "🐋", "lax": "🐟",
     "fagel": "🦆", "sal": "🦭",
 }
 

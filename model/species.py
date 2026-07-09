@@ -25,8 +25,9 @@ COMPARTMENTS = [
     "spigg",      # 7  storspigg
     "abborre",    # 8  abborre (kustrovfisk, brackvatten)
     "gadda",      # 9  gädda (kustrovfisk, brackvatten)
-    "torsk",      # 10 torsk (rovfisk, öppet hav)
-    "lax",        # 11 lax (pelagisk rovfisk, leker i älvar)
+    "flundra",    # 10 flundra/skrubbskädda (plattfisk, bottenlevande, äter bottenfauna)
+    "torsk",      # 11 torsk (rovfisk, öppet hav)
+    "lax",        # 12 lax (pelagisk rovfisk, leker i älvar)
     "fagel",      # 12 sjöfågel (skarv, ejder m.fl.) — toppredator
     "sal",        # 13 gråsäl — toppredator
     "O2",         # 14 ytsyre
@@ -41,7 +42,8 @@ DISPLAY = {
     "N": "Näring", "phyto": "Växtplankton", "cyano": "Cyanobakterier",
     "zoo": "Djurplankton", "bentos": "Bottenfauna", "sill": "Sill",
     "skarpsill": "Skarpsill", "spigg": "Spigg", "abborre": "Abborre",
-    "gadda": "Gädda", "torsk": "Torsk", "lax": "Lax", "fagel": "Sjöfågel",
+    "gadda": "Gädda", "flundra": "Flundra", "torsk": "Torsk", "lax": "Lax",
+    "fagel": "Sjöfågel",
     "sal": "Säl", "O2": "Ytsyre", "O2b": "Bottensyre", "det": "Detritus/kadaver",
 }
 
@@ -55,7 +57,7 @@ UNIT = {
     "cyano": "g/m²", "zoo": "g/m²",
     "bentos": "g/m²",
     "sill": "g/m²", "skarpsill": "g/m²", "spigg": "g/m²",
-    "abborre": "g/m²", "gadda": "g/m²",
+    "abborre": "g/m²", "gadda": "g/m²", "flundra": "g/m²",
     "torsk": "g/m²", "lax": "g/m²",
     "fagel": "g/m²", "sal": "g/m²",
     "O2": "% mättnad", "O2b": "% mättnad", "det": "g/m²",
@@ -120,6 +122,11 @@ FISH = {
                     sal_opt=3.5, sal_width=4.5),
     "gadda": dict(cons=5.0, khalf=6.0, eff=0.46, mort=0.28,
                   sal_opt=3.0, sal_width=4.5),
+    # Flundra/skrubbskädda: bottenlevande plattfisk som betar bottenfauna (blåmussla,
+    # märlkräftor, maskar). Tål bred salthalt men trivs bäst i mellan-/högsalt vatten.
+    # Bottenlevande → drabbas av syrefria bottnar (som torsken).
+    "flundra": dict(cons=4.0, khalf=7.0, eff=0.34, mort=0.38,
+                    sal_opt=7.0, sal_width=6.0),
     "torsk": dict(cons=6.0, khalf=8.0, eff=0.50, mort=0.25,
                   sal_opt=12.0, sal_width=5.0),  # kräver marint vatten
     # Lax: pelagisk rovfisk som jagar sill/skarpsill i öppet hav och leker i älvar
@@ -145,10 +152,11 @@ DIET = {
     "spigg":     {"zoo": 1.0},
     "abborre":   {"zoo": 0.4, "spigg": 0.7, "skarpsill": 0.2},  # kustrovfisk
     "gadda":     {"spigg": 0.6, "abborre": 0.5, "sill": 0.3},   # topp i kustkedjan
+    "flundra":   {"bentos": 1.0, "det": 0.2},                   # bottenätande plattfisk
     "torsk":     {"sill": 0.9, "skarpsill": 1.0, "spigg": 0.6, "bentos": 0.4},
     "lax":       {"sill": 0.8, "skarpsill": 0.6, "spigg": 0.3},   # pelagisk jägare
     "fagel":     {"spigg": 0.7, "abborre": 0.5, "sill": 0.4, "bentos": 0.6},
-    "sal":       {"sill": 0.6, "torsk": 1.0, "skarpsill": 0.4, "lax": 0.5},
+    "sal":       {"sill": 0.6, "torsk": 1.0, "skarpsill": 0.4, "lax": 0.5, "flundra": 0.3},
     "det":       {},   # detritus/kadaver: slutstation som bryts ned till näring
 }
 

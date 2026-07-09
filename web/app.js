@@ -58,10 +58,10 @@ const BIOMASS = ["phyto","cyano","zoo","bentos","sill","skarpsill","spigg","abbo
 
 const PRESETS = {
   plankton: ["N","phyto","cyano","zoo"],
-  fisk: ["sill","skarpsill","spigg","flundra","abborre","gadda","torsk","lax"],
+  fisk: ["sill","skarpsill","spigg","mort","flundra","abborre","gadda","torsk","lax"],
   botten: ["bentos","flundra","O2b","det"],
   syre: ["O2","O2b"],
-  allt: ["N","phyto","cyano","zoo","bentos","sill","skarpsill","spigg","flundra","abborre","gadda","torsk","lax","fagel","sal","O2","O2b"],
+  allt: ["N","phyto","cyano","zoo","bentos","sill","skarpsill","spigg","mort","flundra","abborre","gadda","torsk","lax","fagel","sal","O2","O2b"],
 };
 
 const $ = (id) => document.getElementById(id);

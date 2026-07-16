@@ -142,6 +142,22 @@ LIBRARY = [
      "Svensk myndighetsvägledning om havsöringen som en kustbunden art vars produktion styrs av "
      "vattendragens och kustens kvalitet; mest sport-/fritidsfiske. Skiljer förvaltningen av "
      "havsöring från den öppet-havs-inriktade laxförvaltningen."),
+
+    # --- Svartmunnad smörbult (invasiv) och flodnejonöga ---
+    ("Kotta et al. (2016) Round goby (Neogobius melanostomus) — an ecosystem engineer in the Baltic. Biological Invasions",
+     "Den invasiva svartmunnade smörbulten kom in med barlastvatten och har spridit sig snabbt i "
+     "Östersjön. Den betar hårt på bottenfauna (blåmusslor, kräftdjur), konkurrerar med flundra och "
+     "kustrovfisk och förändrar bottnarnas näringsväv — men blir samtidigt en ny, riklig födokälla "
+     "för torsk, abborre och skarv. Underlag för smörbultens roll som bottenkonkurrent och nytt byte."),
+    ("Ojaveer et al. (2015) Historical baseline and non-native species in the Baltic Sea. ICES/HELCOM",
+     "Översikt av främmande arter i Östersjön och deras spridning; smörbulten är ett av de tydligaste "
+     "exemplen på hur invasiva arter etablerar sig och sprids längs kusterna. Stöd för den aktiva "
+     "spridningen (invasionsfront) i modellens vandringsantaganden."),
+    ("ICES / HELCOM – Flodnejonöga (Lampetra fluviatilis) i Östersjön",
+     "Flodnejonögat är en käklös, anadrom art: larverna lever nedgrävda i åarnas botten i flera år, "
+     "de vuxna vandrar till havet och parasiterar fisk (suger sig fast) innan de återvänder till "
+     "åarna för att leka och dö. Lågt, kustknutet bestånd med kulturhistoriskt fiske; känsligt för "
+     "vandringshinder och försämrad åmiljö. Underlag för nejonögats parasitiska länk och kustberoende."),
 ]
 
 

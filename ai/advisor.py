@@ -38,6 +38,9 @@ Viktiga kända samband i Östersjön:
 - Lax och havsöring är laxfiskar som leker i åar/älvar men skiljer sig åt: laxen vandrar långt \
   ut i öppna havet och födosöker på sill/skarpsill, medan havsöringen är kustbunden och stationär \
   (stannar nära hemåns kust) och äter kustnära byten som spigg och ung sill.
+- Svartmunnad smörbult är en INVASIV bottenfisk (inkom med barlastvatten) som äter bottenfauna och \
+  konkurrerar med flundra och kustrovfisk, men blir samtidigt ny föda åt torsk och skarv. \
+  Flodnejonöga är en käklös, anadrom art som parasiterar fisk i havet och leker i åar (lågt bestånd).
 - Bottenfauna (musslor) filtrerar plankton (näringsrening) men dör på syrefria bottnar.
 - Övergödning + värme ger cyanobakterieblomning på sommaren och syrefria bottnar i djupa \
   bassänger (Egentliga Östersjön). Syrefria bottnar läcker fosfor (intern belastning) → ond cirkel.

@@ -14,6 +14,8 @@
   "f-torsk": "Fisketryck på torsk. Torsken är toppredatorn bland fiskarna. Hårt torskfiske kan utlösa ett regimskifte som är svårt att vända.",
   "f-lax": "Fisketryck på lax (kommersiellt + sportfiske). Laxen är en pelagisk rovfisk som jagar sill och skarpsill och leker i älvarna i norr.",
   "f-havsoring": "Fisketryck på havsöring (mest sport-/fritidsfiske vid kusten). Havsöringen skiljer sig från laxen: den är kustbunden och stationär, stannar nära hemåns mynning och äter kustnära byten som spigg och ung sill.",
+  "f-smorbult": "Riktat uttag av den invasiva svartmunnade smörbulten. Den kom in med barlastvatten och sprider sig; den äter bottenfauna (musslor, kräftdjur) och konkurrerar med flundra och kustrovfisk — men blir också ny föda åt torsk och skarv. Testa om riktat fiske kan hålla den nere.",
+  "f-nejonoga": "Fisketryck på flodnejonöga (litet, kulturhistoriskt fiske i åmynningar). Nejonögat är en käklös rundmun som parasiterar fisk i havet och leker i åar. Lågt bestånd — känsligt för hårt uttag.",
   "bird_hunt": "Skyddsjakt/störning på sjöfågel (skarv m.fl.). 0 = fredad. Skarven äter kustfisk och bottenfauna; mer jakt → färre fåglar.",
   "noise": "Mellanårsvariation (‘väderbrus’): slumpmässig variation i temperatur och näring mellan åren, som i verkligheten. 0 = av. Samma frö ger samma väderförlopp.",
   "years": "Hur många år framåt simuleringen räknar. Regimskiften och återhämtning tar tid — kör längre för att se de långsamma förloppen.",

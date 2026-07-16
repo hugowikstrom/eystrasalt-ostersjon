@@ -95,7 +95,8 @@ def _params_from_json(data):
     p.noise = float(data.get("noise", 0.7))
     p.noise_seed = int(data.get("noise_seed", 0))
     fishing = data.get("fishing") or {}
-    for art in ("sill", "skarpsill", "spigg", "abborre", "gadda", "torsk", "lax", "havsoring"):
+    for art in ("sill", "skarpsill", "spigg", "abborre", "gadda", "torsk", "lax",
+                "havsoring", "smorbult", "nejonoga"):
         if art in fishing:
             p.fishing[art] = float(fishing[art])
     # klämm värden till rimliga intervall

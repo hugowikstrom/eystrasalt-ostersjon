@@ -27,10 +27,12 @@ COMPARTMENTS = [
     "gadda",      # 9  gädda (kustrovfisk, brackvatten)
     "flundra",    # 10 flundra/skrubbskädda (plattfisk, bottenlevande, äter bottenfauna)
     "mort",       # 11 mört/vitfisk (karpfisk, kustomnivor — ökar vid övergödning)
-    "torsk",      # 12 torsk (rovfisk, öppet hav)
-    "lax",        # 13 lax (pelagisk rovfisk, leker i älvar)
-    "havsoring",  # 14 havsöring (kustbunden rovfisk, leker i åar) — stationär
-    "fagel",      # 12 sjöfågel (skarv, ejder m.fl.) — toppredator
+    "smorbult",   # 12 svartmunnad smörbult (invasiv bottenfisk, äter bottenfauna) — konkurrent
+    "torsk",      # 13 torsk (rovfisk, öppet hav)
+    "lax",        # 14 lax (pelagisk rovfisk, leker i älvar)
+    "havsoring",  # 15 havsöring (kustbunden rovfisk, leker i åar) — stationär
+    "nejonoga",   # 16 flodnejonöga (käklös, parasiterar fisk, leker i åar) — anadrom
+    "fagel",      # sjöfågel (skarv, ejder m.fl.) — toppredator
     "sal",        # 13 gråsäl — toppredator
     "O2",         # 14 ytsyre
     "O2b",        # 15 bottensyre (under språngskiktet)
@@ -45,7 +47,8 @@ DISPLAY = {
     "zoo": "Djurplankton", "bentos": "Bottenfauna", "sill": "Sill",
     "skarpsill": "Skarpsill", "spigg": "Spigg", "abborre": "Abborre",
     "gadda": "Gädda", "flundra": "Flundra", "mort": "Mört/vitfisk",
-    "torsk": "Torsk", "lax": "Lax", "havsoring": "Havsöring", "fagel": "Sjöfågel",
+    "smorbult": "Svartmunnad smörbult", "torsk": "Torsk", "lax": "Lax",
+    "havsoring": "Havsöring", "nejonoga": "Flodnejonöga", "fagel": "Sjöfågel",
     "sal": "Säl", "O2": "Ytsyre", "O2b": "Bottensyre", "det": "Detritus/kadaver",
 }
 
@@ -60,8 +63,8 @@ UNIT = {
     "bentos": "g/m²",
     "sill": "g/m²", "skarpsill": "g/m²", "spigg": "g/m²",
     "abborre": "g/m²", "gadda": "g/m²", "flundra": "g/m²", "mort": "g/m²",
-    "torsk": "g/m²", "lax": "g/m²", "havsoring": "g/m²",
-    "fagel": "g/m²", "sal": "g/m²",
+    "smorbult": "g/m²", "torsk": "g/m²", "lax": "g/m²", "havsoring": "g/m²",
+    "nejonoga": "g/m²", "fagel": "g/m²", "sal": "g/m²",
     "O2": "% mättnad", "O2b": "% mättnad", "det": "g/m²",
 }
 
@@ -143,6 +146,14 @@ FISH = {
     # tar över när rovfisken minskar (dokumenterat i svenska kustvikar).
     "mort": dict(cons=3.6, khalf=6.0, eff=0.30, mort=0.46,
                  sal_opt=3.0, sal_width=4.5),
+    # Svartmunnad smörbult (Neogobius melanostomus): INVASIV bottenfisk från
+    # Svarta/Kaspiska havet, etablerad i Östersjön sedan ~1990-talet och sprider sig.
+    # Bottenlevande, äter bottenfauna (musslor, kräftdjur) + fiskägg → konkurrerar
+    # med flundra och kustrovfisk. Tål brett salt-/temperaturspann, hög reproduktion.
+    # Har blivit ny föda för torsk, abborre och skarv. Källor: Kotta et al. 2016,
+    # Ojaveer et al. 2015 (invasion), ICES.
+    "smorbult": dict(cons=4.2, khalf=7.0, eff=0.36, mort=0.40,
+                     sal_opt=7.0, sal_width=7.0),
     "torsk": dict(cons=6.0, khalf=8.0, eff=0.50, mort=0.25,
                   sal_opt=12.0, sal_width=5.0),  # kräver marint vatten
     # Lax: pelagisk rovfisk som jagar sill/skarpsill i öppet hav och leker i älvar
@@ -158,6 +169,13 @@ FISH = {
     # (kustbeteende, telemetri), ICES WGBAST (bestånd), Havs- och vattenmyndigheten.
     "havsoring": dict(cons=4.5, khalf=6.0, eff=0.12, mort=0.32,
                       sal_opt=5.0, sal_width=8.0),
+    # Flodnejonöga (Lampetra fluviatilis): käklös, anadrom "rundmun". Larverna
+    # lever nedgrävda i åarnas botten i flera år; de vuxna vandrar till havet och
+    # PARASITERAR fisk (suger sig fast på sill, skarpsill, torsk m.fl.) innan de
+    # återvänder till åarna för att leka och dö. Lågt bestånd, kustnära/sötlänkat,
+    # fridlyst/kulturhistoriskt värde. Källor: ICES, Havs- och vattenmyndigheten.
+    "nejonoga": dict(cons=2.0, khalf=8.0, eff=0.10, mort=0.35,
+                     sal_opt=5.0, sal_width=8.0),
     # Sjöfågel (skarv, ejder, tärna m.fl.): äter kustfisk och bottenfauna.
     "fagel": dict(cons=2.4, khalf=6.0, eff=0.10, mort=0.22,
                   sal_opt=8.0, sal_width=20.0),  # finns längs hela kusten
@@ -179,10 +197,12 @@ DIET = {
     "gadda":     {"spigg": 0.6, "mort": 0.6, "abborre": 0.5, "sill": 0.3},  # topp i kustkedjan
     "flundra":   {"bentos": 1.0, "det": 0.2},                   # bottenätande plattfisk
     "mort":      {"zoo": 0.7, "det": 0.5, "phyto": 0.2},        # kustomnivor (karpfisk)
-    "torsk":     {"sill": 0.9, "skarpsill": 1.0, "spigg": 0.6, "bentos": 0.4},
+    "smorbult":  {"bentos": 1.0, "det": 0.3},                   # invasiv bottenätare
+    "torsk":     {"sill": 0.9, "skarpsill": 1.0, "spigg": 0.6, "smorbult": 0.7, "bentos": 0.4},
     "lax":       {"sill": 0.8, "skarpsill": 0.6, "spigg": 0.3},   # pelagisk jägare
     "havsoring": {"spigg": 0.6, "sill": 0.5, "skarpsill": 0.3},   # kustnära jägare
-    "fagel":     {"spigg": 0.7, "abborre": 0.5, "mort": 0.4, "sill": 0.4, "bentos": 0.6},
+    "nejonoga":  {"sill": 0.5, "skarpsill": 0.3, "torsk": 0.2},   # parasiterar fisk
+    "fagel":     {"spigg": 0.7, "abborre": 0.5, "mort": 0.4, "smorbult": 0.5, "sill": 0.4, "bentos": 0.6},
     "sal":       {"sill": 0.6, "torsk": 1.0, "skarpsill": 0.4, "lax": 0.5, "flundra": 0.3, "havsoring": 0.3},
     "det":       {},   # detritus/kadaver: slutstation som bryts ned till näring
 }

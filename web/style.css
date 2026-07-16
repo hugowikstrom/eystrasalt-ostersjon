@@ -443,3 +443,20 @@ input[type=text], input[type=url], input[type=number], input[type=email], input[
 .gaps { margin: .5rem 0 0; padding-left: 1.4rem; }
 .gaps li { margin: .5rem 0; line-height: 1.5; }
 .gaps li b { color: var(--accent, #4ea8ff); }
+
+/* Politik & frågor: kort med fråga, argument för/emot och simuleringsförslag */
+.politik { display: flex; flex-direction: column; gap: .9rem; margin-top: .6rem; }
+.pol-card { border: 1px solid var(--line, #24384d); border-radius: 10px;
+  padding: .9rem 1rem; background: var(--panel2, rgba(255,255,255,.02)); }
+.pol-q { font-weight: 700; font-size: 1.05rem; margin-bottom: .6rem;
+  display: flex; align-items: baseline; gap: .55rem; }
+.pol-num { flex: none; min-width: 1.6rem; height: 1.6rem; line-height: 1.6rem;
+  text-align: center; border-radius: 50%; font-size: .85rem; font-weight: 700;
+  background: var(--accent, #4ea8ff); color: #06121f; }
+.pol-row { margin: .35rem 0; line-height: 1.5; }
+.pol-lbl { display: inline-block; font-weight: 700; margin-right: .4rem;
+  font-size: .82rem; text-transform: uppercase; letter-spacing: .03em; }
+.pol-for .pol-lbl { color: #4ade80; }
+.pol-con .pol-lbl { color: #ff6b6b; }
+.pol-sim { border-top: 1px dashed var(--line, #24384d); padding-top: .45rem; margin-top: .55rem; }
+.pol-sim .pol-lbl { color: #4ea8ff; }

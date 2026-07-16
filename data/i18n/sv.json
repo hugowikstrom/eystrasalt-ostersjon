@@ -203,5 +203,11 @@
   "gap_5": "**Spiggens roll i regimskiften.** Styrkan i storspiggens larvpredation på torsk-, abborr- och gäddyngel, och hur låst ett 'spigghav' egentligen är.",
   "gap_6": "**Fiskvandring och utbredning.** Hur snabbt bestånd förflyttar sig mellan bassänger. Mobilitetstalen i modellen (inkl. laxens höga och havsöringens låga rörlighet) är rimliga men grova antaganden som skulle må bra av märknings-/akustikdata.",
   "gap_7": "**Toppredatorernas uttag.** Hur mycket gråsäl och skarv faktiskt tar ur fiskbestånden och hur det samspelar med det kommersiella fisket.",
-  "gap_8": "**Klimatets utsötning.** Hur mycket och hur snabbt Östersjön sötas ut av ökad nederbörd/avrinning — vilket slår hårt mot torsken och gynnar kustrovfisk."
+  "gap_8": "**Klimatets utsötning.** Hur mycket och hur snabbt Östersjön sötas ut av ökad nederbörd/avrinning — vilket slår hårt mot torsken och gynnar kustrovfisk.",
+  "tab_politik": "Politik & frågor",
+  "politik_title": "De vanligaste politiska frågorna om Östersjön",
+  "politik_hint": "Återkommande stridsfrågor i Östersjöpolitiken. För varje: argument för och emot, samt konkreta simuleringar du kan köra i verktyget för att pröva frågan. Argumenten speglar debatten — de är inte verktygets ståndpunkt.",
+  "politik_for": "Argument för",
+  "politik_emot": "Argument emot",
+  "politik_sim": "Simuleringar att köra"
 }

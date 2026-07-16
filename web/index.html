@@ -36,6 +36,7 @@
       <button class="tab active" data-tab="sim" data-i18n="tab_sim">Simulering</button>
       <button class="tab" data-tab="mc" data-i18n="tab_mc">Strategier &amp; Monte Carlo</button>
       <button class="tab" data-tab="eco" data-i18n="tab_eco">Ekonomi</button>
+      <button class="tab" data-tab="politik" data-i18n="tab_politik">Politik &amp; frågor</button>
       <button class="tab" data-tab="pyramid" data-i18n="tab_pyramid">Näringspyramid &amp; uttag</button>
       <button class="tab" data-tab="ekologi" data-i18n="tab_ekologi">Ekologimatris</button>
       <button class="tab" data-tab="verify" data-i18n="tab_verify">Verifiering</button>
@@ -233,6 +234,15 @@
       </div>
       <div id="eco-status" class="status">Kör Monte Carlo (fliken bredvid) för att fylla i.</div>
       <div class="table-wrap"><table id="eco-table"></table></div>
+    </div>
+  </section>
+
+  <!-- ============ FLIK: POLITIK & FRÅGOR ============ -->
+  <section class="view" id="view-politik">
+    <div class="panel wide">
+      <h2><span data-i18n="politik_title">De vanligaste politiska frågorna om Östersjön</span> <span class="help" data-k="politik"></span></h2>
+      <p class="hint" data-i18n="politik_hint">Tjugo återkommande stridsfrågor i Östersjöpolitiken. För varje: argument för och emot, samt konkreta simuleringar du kan köra i verktyget för att pröva frågan. Argumenten speglar debatten — de är inte verktygets ståndpunkt.</p>
+      <div id="politik-list" class="politik"></div>
     </div>
   </section>
 

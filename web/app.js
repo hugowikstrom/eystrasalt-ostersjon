@@ -247,6 +247,121 @@ function renderGaps() {
   el.innerHTML = html;
 }
 
+// De 20 vanligaste politiska frågorna om Östersjön. Innehållet är på svenska
+// (Sverige-/Östersjöspecifik debatt); ramen (rubriker, etiketter) språkanpassas
+// via i18n. pro/con speglar DEBATTENS argument — inte verktygets ståndpunkt.
+// sim = konkreta reglage/flikar att köra för att pröva frågan i modellen.
+const POLITIK = [
+  { q: "Ska gråsälen skyddsjagas för att gynna fisket?",
+    pro: "Sälen tar mycket torsk och lax, sprider sälmask (torskens parasit) och slår sönder redskap — lokal jakt kan lätta trycket på hårt pressade bestånd.",
+    con: "Gråsälen är en naturlig toppredator som nyss återhämtat sig från nära utrotning; fiskets problem beror mer på övergödning, syrebrist och torskens kollaps än på säl.",
+    sim: "Dra upp reglaget «Säljakt» stegvis (0 → 2 → 5) och kör 30 år. Se om torsk och lax faktiskt ökar, eller om skarpsill/spigg tar över utrymmet. Jämför utfallet i Monte Carlo och väg ökad fiskefångst mot förlorad toppredator i Ekonomi-fliken." },
+  { q: "Ska skarven (mellanskarv) skyddsjagas?",
+    pro: "Skarven äter stora mängder kustfisk — abborre, gädda, mört — och kan tömma lokala vikar där bestånden redan är svaga.",
+    con: "Skarvens påverkan är oftast lokal; kustfiskens nedgång drivs mest av storspiggen, övergödning och förlorade lek- och uppväxtmiljöer.",
+    sim: "Öka «Skarv-/fågeljakt» och kör. Följ abborre, gädda och mört i kartlagren. Testa samma jakt med och utan minskad övergödning — vilket ger egentligen mest kustrovfisk?" },
+  { q: "Ska vi tråla bort storspiggen för att bryta «spiggkrisen»?",
+    pro: "Spiggen har exploderat och äter yngel av abborre, gädda och torsk (wasp-waist). En riktad reduktion skulle kunna bryta det låsta «spigghavet».",
+    con: "Spiggen är ett symptom, inte orsaken — utan starka rovfiskar återkommer den snabbt. Trålning ger bifångst och kan störa näringsväven ytterligare.",
+    sim: "Höj «Fisketryck spigg» och kör. Se om abborre/gädda/torsk återhämtar sig. Jämför med att i stället stärka rovfisken (sänk torsk- och gäddfisket) — vilken väg bryter fällan bäst och mest varaktigt?" },
+  { q: "Ska det storskaliga industri-/foderfisket på skarpsill och sill fortsätta tillåtas?",
+    pro: "Foderfisket ger råvara till fiskmjöl och -olja (foder till odlad lax, päls- och husdjur) samt jobb, och skarpsillsbeståndet är för tillfället stort.",
+    con: "Det trålar bort basfödan som torsk, sjöfågel, säl och strömming lever på — och tar strömmingen (sillen) som kustsamhällena är beroende av, vilket urholkar hela näringsväven underifrån.",
+    sim: "Höj «Fisketryck skarpsill» och «Fisketryck sill» och kör. Följ torsk, lax, sjöfågel och säl — ser du hur ett hårt uttag längst ned i kedjan fortplantar sig uppåt? Väg i Ekonomi-fliken foderfiskets värde mot förlorat värde av rovfisk och ekosystemtjänster." },
+  { q: "Ska torskfisket förbli helt stoppat?",
+    pro: "Östersjötorsken är kollapsad; fortsatt stopp är enda chansen till återhämtning av toppredatorn.",
+    con: "Torsken återhämtar sig ändå inte (dålig kondition, syrebrist, magra bestånd) — stoppet drabbar fisket utan tydlig effekt.",
+    sim: "Sätt «Fisketryck torsk» = 0 och kör 40–50 år. Kör sedan samma stopp men kombinera med högre salthalt och mindre övergödning. Svarar torsken bara när även livsmiljön åtgärdas?" },
+  { q: "Hur hårt ska jordbrukets och avloppens näringsläckage minskas?",
+    pro: "Minskad näringstillförsel är grundorsaksåtgärden — mindre algblomning, bättre bottensyre och ett friskare hav på sikt.",
+    con: "Dyrt för jordbruk och kommuner, och effekten är trög: intern fosforbelastning från döda bottnar gör att havet svarar först efter årtionden.",
+    sim: "Sänk «Näringsbelastning» (1.0 → 0.5) och kör 50 år. Följ bottensyre och cyanobakterier. Använd Ekonomi-fliken för att väga åtgärdskostnaden mot värdet av återställda ekosystemtjänster." },
+  { q: "Ska bottentrålning förbjudas?",
+    pro: "Trålen skadar bottnar och bottenfauna, grumlar vattnet och ger stor bifångst av bl.a. torsk.",
+    con: "Bottentrålning är central för delar av fiskerinäringen; skonsammare redskap är dyrare och mindre effektiva.",
+    sim: "Sänk fisketrycket på de bottennära arterna (torsk, flundra) och kör. Följ bottenfauna och flundra över tid som mått på bottnarnas återhämtning." },
+  { q: "Ska staten storskaligt syresätta de döda bottnarna (pumpning)?",
+    pro: "Syresättning kan bryta den interna fosforcykeln lokalt och väcka liv i syrefria bottnar snabbare än näringsminskning.",
+    con: "Mycket dyrt, oprövat i stor skala och åtgärdar symptomet, inte källan (näringen) — risk för nya störningar.",
+    sim: "Modellens saltvatteninflöden (MBI) är naturens egen syresättning. Kör flera slumpfrön (brus) och se hur länge en syrepuls håller innan djupbassängen blir syrefri igen — ett mått på hur ofta konstgjord syresättning måste upprepas." },
+  { q: "Ska musselodling subventioneras som näringsrening?",
+    pro: "Musslor filtrerar växtplankton och binder näring som skördas bort ur havet — en «blå» reningsmetod som även ger foder.",
+    con: "I det söta norr blir musslorna små och odlingen ineffektiv; kostnaden per kilo bortförd fosfor är omdiskuterad.",
+    sim: "Följ bottenfauna (filtrerarna) i kartan vid olika näringsnivåer och se hur mycket deras filtrering trycker ned växtplankton — en indikation på filtreringens potential." },
+  { q: "Hur ska fiskekvoterna fördelas mellan länder och mellan yrkes- och fritidsfiske?",
+    pro: "Tydliga, rättvisa kvoter förhindrar överfiske och ger förutsägbarhet för näringen.",
+    con: "Fördelningen är en het konflikt — små kustsamhällen, storskaligt trålfiske och sportfisket drar åt olika håll.",
+    sim: "Kör olika fisketrycks-nivåer per art och jämför i Ekonomi-fliken, som visar värdet per land. Se hur totalfångst vs långsiktigt bestånd förändras med hårdare respektive mildare kvoter." },
+  { q: "Ska vi satsa på kustrestaurering — «gäddfabriker» och våtmarker?",
+    pro: "Återställda våtmarker och grunda vikar ger lek- och uppväxtmiljöer som bygger upp abborre och gädda underifrån.",
+    con: "Storskalig nytta är osäker och lokal; markåtkomst och kostnad är hinder.",
+    sim: "Kombinera en liten utsötning (gynnar kustrovfisk) med lägre spiggtryck och kör. Följ abborre och gädda i norra/kustnära zoner." },
+  { q: "Ska lax- och havsöringsvatten prioriteras (fria vandringsvägar, årestaurering)?",
+    pro: "Rivna vandringshinder och friska åar ger fler vildlaxar och havsöringar — höga natur- och sportfiskevärden.",
+    con: "Krockar med vattenkraft och markägare; kostsamt och långsamt.",
+    sim: "Sänk «Fisketryck lax» respektive «Fisketryck havsöring» och jämför. Notera skillnaden i modellen: laxen är havsvandrande (åtgärder måste tänkas storskaligt) medan havsöringen är kustbunden (lokala åtgärder nära hemån biter direkt)." },
+  { q: "Hur ska vi hantera klimatförändringens uppvärmning och utsötning?",
+    pro: "Att planera för ett varmare, sötare hav är nödvändigt — annars slår förändringen ut torsken och gynnar cyanobakterier oväntat.",
+    con: "Östersjöländerna kan inte styra klimatet ensamma; risk att lokala åtgärder överskuggas av global uppvärmning.",
+    sim: "Höj «Klimatuppvärmning» och sänk «Salthaltsändring» och kör. Se torsken minska, kustrovfisk och cyanobakterier öka, och bottensyret försämras — testa vilka lokala åtgärder som mildrar mest." },
+  { q: "Ska de marina skyddsområdena utökas och fredas helt från fiske?",
+    pro: "Helt fredade områden låter hela näringsväven återhämta sig och fungerar som barnkammare som spiller över till omgivningen.",
+    con: "Begränsar fisket och kräver övervakning; effekten uteblir om övergödningen kvarstår.",
+    sim: "Sätt allt fisketryck lågt (ett fredningsscenario) och kör. Jämför hela näringsvävens och hälsoindexets återhämtning mot baslinjen i Monte Carlo." },
+  { q: "Hur mycket ska vi investera i avloppsrening?",
+    pro: "Modern rening (kväve/fosfor) är en av de mest kostnadseffektiva åtgärderna mot övergödning.",
+    con: "Stora investeringar för kommuner; en del läckage kommer från jordbruk och kan inte renas i verk.",
+    sim: "Sänk «Näringsbelastning» måttligt och kör; jämför bottensyre och algnivåer. Ekonomi-fliken visar om nyttan (tjänster) motiverar investeringen." },
+  { q: "Ska vi införa handel med näringsutsläppsrätter mellan länder?",
+    pro: "Marknadsstyrning kan ge störst näringsminskning per krona genom att åtgärda där det är billigast.",
+    con: "Svårt att mäta och kontrollera; risk att utsläppen bara flyttar mellan bassänger.",
+    sim: "Näringsbelastningen är zonvis i modellen. Kör olika minskningar och jämför hur syre och alger svarar i just den övergödda zonen — en indikation på var åtgärder ger mest." },
+  { q: "Ska Östersjöländerna binda sig vid gemensamma, bindande mål (BSAP)?",
+    pro: "Havet delas av nio länder — bara samordnade, bindande mål räcker mot ett gemensamt problem.",
+    con: "Bindande mål inskränker nationellt självbestämmande och riskerar att bli tröga att förhandla.",
+    sim: "Kör det kombinerade åtgärdspaketet (minskad övergödning + minskat fiske samtidigt) och jämför med enstaka åtgärder — visar värdet av att göra allt på en gång." },
+  { q: "Ska vi prioritera kortsiktiga fiskeintäkter eller långsiktiga ekosystemtjänster?",
+    pro: "Fisket ger jobb och mat här och nu; för hårda restriktioner slår mot kustsamhällen direkt.",
+    con: "Överuttag idag urholkar bestånd och tjänster som är värda långt mer på sikt.",
+    sim: "Kör samma strategi över kort (10 år) och lång (50 år) horisont i Ekonomi-fliken och jämför värdet — gör avvägningen synlig i siffror." },
+  { q: "Ska vattenbruk och fiskodling byggas ut i Östersjön?",
+    pro: "Odlad fisk minskar trycket på vilda bestånd och ger lokal matproduktion.",
+    con: "Öppna kassar läcker näring och kan förvärra övergödningen lokalt.",
+    sim: "Höj «Näringsbelastning» något (motsvarar lokalt näringstillskott) och kör; se effekten på alger och syre i den zonen — väg mot minskat uttag av vildfisk." },
+  { q: "Ska torsken aktivt återintroduceras, eller ska vi lita på naturlig återhämtning?",
+    pro: "Aktiv utsättning kan snabba på återkomsten om den naturliga rekryteringen har fastnat.",
+    con: "Utan rätt salthalt och syre svälter/dör utsatt torsk ändå — pengar i sjön.",
+    sim: "Kör torskstopp med och utan förbättrad livsmiljö (högre salthalt, mindre övergödning). Om torsken bara svarar när miljön förbättras är utsättning ensam lönlös." },
+  { q: "Ska säl och skarv skyddsjagas samtidigt, eller inte alls?",
+    pro: "Båda är toppredatorer på fisk; samlad skyddsjakt skulle kunna ge tydligare effekt för fisket än att jaga bara den ena.",
+    con: "Att slå mot två toppredatorer samtidigt kan destabilisera näringsväven och gynna spigg och skräpfisk mer än nyttofisk.",
+    sim: "Höj «Säljakt» och «Skarv-/fågeljakt» tillsammans och kör; jämför med att bara höja den ena. Följ nyttofisk, spigg och hälsoindex — ger dubbel jakt dubbel nytta eller oväntade bakslag?" },
+  { q: "Hur hårt ska miljögifterna fasas ut (dioxin, PCB, läkemedel, mikroplast)?",
+    pro: "Östersjöns strömming, lax och öring har så höga dioxin- och PCB-halter att det finns kostråd — utfasning skyddar folkhälsan och gör fisken säljbar igen.",
+    con: "Gamla synder (dioxin/PCB) sitter kvar i sedimenten och avtar långsamt oavsett åtgärder; nya krav som läkemedelsrening är dyra för kommunerna.",
+    sim: "Modellen simulerar inte gifter direkt, men den visar vägen de tar: miljögifter anrikas uppåt i näringskedjan. Följ toppredatorerna (lax, havsöring, säl) — ju större deras andel av uttaget, desto mer giftanrikning bär fångsten. Använd näringsvävens struktur (Ekologimatris) för att resonera om exponeringen." },
+  { q: "Hur ska havets hälsa vägas mot ekonomisk utveckling (sjöfart, hamnar, kustexploatering)?",
+    pro: "Sjöfart, hamnar, turism och kustbebyggelse skapar jobb och tillväxt som regionen behöver.",
+    con: "Muddring, utfyllnad, buller och utsläpp tär på grunda livsmiljöer som inte kan återställas — kortsiktig tillväxt mot bestående naturförlust.",
+    sim: "Verktyget sätter pris på naturen. Kör Ekonomi-fliken och jämför värdet av ekosystemtjänster (ett friskt hav) mot fiskeintäkterna under olika strategier — en siffra att ställa mot exploateringens intäkter i en samhällsekonomisk avvägning." },
+];
+
+// Renderar politik-frågorna som kort. Etiketterna (För/Emot/Simuleringar)
+// språkanpassas via i18n; frågeinnehållet är på svenska.
+function renderPolitik() {
+  const el = $("politik-list"); if (!el) return;
+  const lFor = T("politik_for", "Argument för");
+  const lCon = T("politik_emot", "Argument emot");
+  const lSim = T("politik_sim", "Simuleringar att köra");
+  el.innerHTML = POLITIK.map((p, i) => `
+    <div class="pol-card">
+      <div class="pol-q"><span class="pol-num">${i + 1}</span>${escHtml(p.q)}</div>
+      <div class="pol-row pol-for"><span class="pol-lbl">${escHtml(lFor)}</span>${escHtml(p.pro)}</div>
+      <div class="pol-row pol-con"><span class="pol-lbl">${escHtml(lCon)}</span>${escHtml(p.con)}</div>
+      <div class="pol-row pol-sim"><span class="pol-lbl">${escHtml(lSim)}</span>${escHtml(p.sim)}</div>
+    </div>`).join("");
+}
+
 // ---- Karta ----
 function layerValue(layer, zone, i) {
   if (layer.key === "temp") return RES.env.temp[zone][i];
@@ -1429,6 +1544,7 @@ function activateTab(name) {
   $("view-" + name).classList.add("active");
   if (name === "reports") loadReports();
   if (name === "ideas") loadIdeas();
+  if (name === "politik") renderPolitik();
   if (name === "ekologi") renderMatrix();
   if (name === "pyramid" && RES) { drawPyramid(); drawUttak(); drawTrofi(); }
 }

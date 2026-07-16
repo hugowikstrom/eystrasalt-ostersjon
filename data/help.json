@@ -27,6 +27,7 @@
   "health": "Hälsoindex 0–100 väger samman fem indikatorer: torskbestånd (30 %), kustrovfisk abborre/gädda (20 %), låg cyanobakterienivå (20 %), näringsvävens balans (15 %) och bottensyre (15 %). Syret väger nu mindre — det följs istället som en egen parameter i graferna. Högre = friskare hav.",
   "economics": "Ekonomiskt värde per år: fiske (torsk, sill, skarpsill) plus ekosystemtjänster (rekreation, näringsrening, mångfald) som skalar med havets hälsa. Fördelas på länderna efter deras andel av varje havsområde. I miljoner euro.",
   "verification": "Kontroller som jämför modellens beteende med kända samband i forskningslitteraturen. Grönt = modellen reproducerar sambandet i rätt riktning.",
+  "politik": "De vanligaste stridsfrågorna i Östersjöpolitiken, med argument för och emot och förslag på simuleringar som prövar frågan. Argumenten speglar debattens sidor — inte verktygets åsikt.",
   "reports": "Klistra in text ur rapporter/studier (t.ex. HELCOM, ICES) som du vill att AI:n ska väga in när den tolkar scenarier och föreslår forskning.",
   "research": "AI:n rangordnar var mer forskning behövs, utifrån vilka osäkra parametrar som påverkar utfallet mest (känslighetsanalysen) och dina inlagda rapporter."
 }

@@ -13,6 +13,7 @@
   "f-gadda": "Fisketryck (mest fritidsfiske) på gädda. Gäddan är topprovfisk i kustvikarna och gynnas av utsötning.",
   "f-torsk": "Fisketryck på torsk. Torsken är toppredatorn bland fiskarna. Hårt torskfiske kan utlösa ett regimskifte som är svårt att vända.",
   "f-lax": "Fisketryck på lax (kommersiellt + sportfiske). Laxen är en pelagisk rovfisk som jagar sill och skarpsill och leker i älvarna i norr.",
+  "f-havsoring": "Fisketryck på havsöring (mest sport-/fritidsfiske vid kusten). Havsöringen skiljer sig från laxen: den är kustbunden och stationär, stannar nära hemåns mynning och äter kustnära byten som spigg och ung sill.",
   "bird_hunt": "Skyddsjakt/störning på sjöfågel (skarv m.fl.). 0 = fredad. Skarven äter kustfisk och bottenfauna; mer jakt → färre fåglar.",
   "noise": "Mellanårsvariation (‘väderbrus’): slumpmässig variation i temperatur och näring mellan åren, som i verkligheten. 0 = av. Samma frö ger samma väderförlopp.",
   "years": "Hur många år framåt simuleringen räknar. Regimskiften och återhämtning tar tid — kör längre för att se de långsamma förloppen.",

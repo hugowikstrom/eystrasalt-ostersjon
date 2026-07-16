@@ -26,7 +26,7 @@ Egentliga Östersjön, Rigabukten, Öresund/Bälten) med en salthaltsgradient fr
 sött i norr (~3 PSU) till marint i söder (~18 PSU). Hela kretsloppet modelleras: \
 näringssalter → växtplankton och cyanobakterier → djurplankton och bottenfauna (blåmussla) \
 → planktonätande fisk (sill, skarpsill, spigg) → kustrovfisk (abborre, gädda) och rovfisk \
-(torsk) → toppredatorer (sjöfågel/skarv, gråsäl). När djuren dör blir de detritus/kadaver \
+(torsk, lax, havsöring) → toppredatorer (sjöfågel/skarv, gråsäl). När djuren dör blir de detritus/kadaver \
 som nedbrytare omvandlar tillbaka till näring. Syret modelleras i två skikt: ytsyre och bottensyre.
 
 Viktiga kända samband i Östersjön:
@@ -35,6 +35,9 @@ Viktiga kända samband i Östersjön:
   yngel och kan låsa fast ett 'spigghav' (wasp-waist-regimskifte) som är trögt att vända — \
   både i öppet hav (torsk) och i kustvikar (abborre/gädda).
 - Abborre och gädda är kustrovfiskar i bräckt/sött vatten (norr, kustnära) och gynnas av utsötning.
+- Lax och havsöring är laxfiskar som leker i åar/älvar men skiljer sig åt: laxen vandrar långt \
+  ut i öppna havet och födosöker på sill/skarpsill, medan havsöringen är kustbunden och stationär \
+  (stannar nära hemåns kust) och äter kustnära byten som spigg och ung sill.
 - Bottenfauna (musslor) filtrerar plankton (näringsrening) men dör på syrefria bottnar.
 - Övergödning + värme ger cyanobakterieblomning på sommaren och syrefria bottnar i djupa \
   bassänger (Egentliga Östersjön). Syrefria bottnar läcker fosfor (intern belastning) → ond cirkel.

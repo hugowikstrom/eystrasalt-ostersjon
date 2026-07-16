@@ -105,6 +105,43 @@ LIBRARY = [
      "Skrubbskädda/flundra är Östersjöns vanligaste plattfisk: bottenlevande, betar bottenfauna "
      "(musslor, kräftdjur) och påverkas av salthalt och syrefria bottnar. Underlag för "
      "plattfiskens roll som länk mellan bottendjur och rovfisk/säl."),
+
+    # --- Fiskvandring, rörelse och rumslig utbredning (underlag för zonvandringen) ---
+    ("Aro (1989) A review of fish migration patterns in the Baltic. Rapp. P.-v. Réun. Cons. int. Explor. Mer 190:72–96",
+     "Klassisk översikt av vandringsmönstren hos Östersjöns fiskar: sill/strömming och skarpsill "
+     "vandrar mellan födo- och lekområden och binder ihop bassängerna; torsk rör sig mot de djupa "
+     "salta bassängerna i söder; kustfisk är mer stationär. Direkt underlag för hur rörlig varje "
+     "art är i modellens zonvandring (MIGRATE)."),
+    ("Bartolino et al. (2017) Spatio-temporal dynamics of a fish predator: hydrographic effects on Baltic cod. PLoS ONE",
+     "Visar hur östersjötorskens utbredning har krympt och koncentrerats till de södra, saltare "
+     "och syresatta bassängerna när salthalt och syre försämrats. Stöd för att torskens utbredning "
+     "styrs av salthalt/syre snarare än fri spridning."),
+    ("ICES (årlig) WGBAST – Baltic Salmon and Trout Assessment Working Group",
+     "Laxens livscykel i Östersjön: den födosöker i det öppna havet (egentliga Östersjön/"
+     "Bottenhavet) och vandrar långt för att leka i norrlandsälvarna. Motiverar laxens höga "
+     "rörlighet i modellen och dess breda salthaltstolerans."),
+    ("Casini et al. (2012) Predator transitory spillover induces trophic cascades in ecological sinks. PNAS 109:8185",
+     "Visar rumslig spillover: när skarpsillen är tät i en bassäng svämmar den över till "
+     "angränsande områden och utlöser kaskader där. Underlag för att rörliga bestånd sprider sig "
+     "mellan grannzoner (diffusion hög→låg täthet)."),
+    ("Hinrichsen et al. (2011) Spatio-temporal variability in cod larval transport in the Baltic. ICES J. Marine Science",
+     "Hydrodynamisk drift av torskägg och -larver mellan bassängerna kopplar samman delbestånden. "
+     "Kompletterar den aktiva vandringen med passiv transport med vattenmassorna."),
+
+    # --- Havsöring (Salmo trutta) — skiljer sig starkt från laxen ---
+    ("Kallio-Nyberg et al. (2002) Migration of reared Baltic sea trout (Salmo trutta). Fisheries Research 58:353–366",
+     "Havsöringens vandring skiljer sig starkt från laxens: den är KUSTBUNDEN och stannar nära "
+     "utsättnings-/hemåns område i stället för att vandra ut till öppna havet. Återfångster sker "
+     "till övervägande del i kustzonen nära hemälven. Direkt underlag för havsöringens LÅGA "
+     "rörlighet (MIGRATE) jämfört med laxen."),
+    ("Aarestrup et al. (2018) Survival and behaviour of sea trout post-smolts in coastal areas (akustisk telemetri).",
+     "Telemetri visar att havsöringens smolt och vuxna huvudsakligen uppehåller sig i grunda "
+     "kustnära vatten nära åmynningen och gör korta förflyttningar, till skillnad från laxens "
+     "långa öppet-hav-vandringar. Stöd för att havsöringen modelleras som stationär och kustknuten."),
+    ("Havs- och vattenmyndigheten – Havsöring: bestånd, förvaltning och kustnära livsmiljöer",
+     "Svensk myndighetsvägledning om havsöringen som en kustbunden art vars produktion styrs av "
+     "vattendragens och kustens kvalitet; mest sport-/fritidsfiske. Skiljer förvaltningen av "
+     "havsöring från den öppet-havs-inriktade laxförvaltningen."),
 ]
 
 

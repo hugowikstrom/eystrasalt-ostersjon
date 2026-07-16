@@ -39,6 +39,38 @@ MIX_SUM = MIX.sum(axis=1)
 # Kompartment som blandas mellan zoner (löst/planktoniskt driver med vattnet)
 MIXED = [CI["N"], CI["phyto"], CI["cyano"], CI["zoo"], CI["det"]]
 
+# Beståndsvandring: rörliga djur simmar mellan grannzoner (diffusion hög→låg täthet,
+# massbevarande). Mobiliteten (andel av vattenutbytes-hastigheten) speglar HUR varje
+# art faktiskt rör sig i Östersjön. Vandringen samverkar med salthalts-nischen
+# (salinity_response) och torskens lekkrav (cod_reproduction_factor): arten sprider
+# sig genom att simma, men frodas bara där habitatet passar → utbredningen blir
+# realistisk och FÖRSKJUTS när t.ex. klimatet sötar ut havet.
+#   Källor (riktningar): ICES WGBFAS/WGBAST, HELCOM, Havs- och vattenmyndigheten.
+MIGRATE = {
+    # Pelagiska stimfiskar — vandrar långt mellan födo- och lekområden, binder ihop bassängerna:
+    CI["sill"]:      0.9,   # sill/strömming: flera bestånd, vandrar kust⇄öppet hav
+    CI["skarpsill"]: 0.9,   # skarpsill: högrörlig, följer temperatur/syre i de centrala bassängerna
+    CI["lax"]:       1.0,   # lax: långa vandringar — födosöker i egentliga Östersjön, leker i norrlandsälvar
+    # Havsöring — TVÄRTEMOT laxen: kustbunden och stationär. Stannar nära hemåns
+    # mynning inom en kustzon, gör inga öppet-hav-vandringar → mycket låg mobilitet.
+    CI["havsoring"]: 0.25,
+    # Storspigg — kraftig säsongsvandring öppet hav ⇄ kust (leker vid kusten på våren):
+    CI["spigg"]:     0.6,
+    # Torsk — bottennära, rör sig mot de djupa salta bassängerna i söder men är relativt
+    # stationär inom sitt område (östersjötorsken är starkt salt-/syrebegränsad):
+    CI["torsk"]:     0.5,
+    # Flundra — bottenlevande plattfisk, förflyttar sig måttligt mellan grunda/djupa områden:
+    CI["flundra"]:   0.3,
+    # Kustrovfisk & mört — starkt platstrogna i kustvikarna, vandrar kort (sötvattenarter i norr/kust):
+    CI["abborre"]:   0.2,
+    CI["gadda"]:     0.12,
+    CI["mort"]:      0.15,
+    # Toppredatorer — rör sig vitt och följer bytet:
+    CI["fagel"]:     0.4,   # skarv/sjöfågel: kustbundna men förflyttar sig mellan områden
+    CI["sal"]:       0.5,   # gråsäl: stora hemområden, följer fisken
+    # (Bottenfauna sitter fast och ingår ej — ingen vandring.)
+}
+
 HYP_THRESH = 30.0        # syrenivå under vilken hypoxi ger extra dödlighet
 HYP_MORT_TORSK = 0.5     # torsk (bottenlevande) drabbas hårdast av syrebrist
 HYP_MORT_ZOO = 0.3
@@ -57,7 +89,7 @@ class EcoParams:
     noise_seed: int = 0            # slumpfrö för bruset (samma frö = samma förlopp)
     fishing: dict = field(default_factory=lambda: dict(
         sill=0.2, skarpsill=0.3, spigg=0.05, abborre=0.1, gadda=0.1,
-        torsk=0.2, lax=0.15))
+        torsk=0.2, lax=0.15, havsoring=0.12))
 
 
 def _forcing(t, p: EcoParams):
@@ -89,6 +121,20 @@ def _precompute(p: EcoParams):
     else:
         knots = temp_noise = load_noise = None
 
+    # Episodiska stora saltvatteninflöden (MBI): lotta händelseår (~vart 10:e år).
+    # Samma frö → samma förlopp. Vid noise=0 (rent deterministiskt läge) inga MBI.
+    if p.noise > 0:
+        rngm = np.random.RandomState(int(p.noise_seed) + 4711)
+        yy, ev = 0.0, []
+        while True:
+            yy += rngm.exponential(S.MBI_INTERVAL)
+            if yy >= p.years:
+                break
+            ev.append(yy)
+        mbi_years = np.array(ev) if ev else None
+    else:
+        mbi_years = None
+
     return dict(
         sal=sal,
         sr_sill=np.array([S.salinity_response("sill", s) for s in sal]),
@@ -100,9 +146,11 @@ def _precompute(p: EcoParams):
         sr_mort=np.array([S.salinity_response("mort", s) for s in sal]),
         sr_torsk=np.array([S.salinity_response("torsk", s) for s in sal]),
         sr_lax=np.array([S.salinity_response("lax", s) for s in sal]),
+        sr_havsoring=np.array([S.salinity_response("havsoring", s) for s in sal]),
         sr_fagel=np.array([S.salinity_response("fagel", s) for s in sal]),
         repro=np.array([S.cod_reproduction_factor(s) for s in spawn_sal]),
         knots=knots, temp_noise=temp_noise, load_noise=load_noise,
+        mbi_years=mbi_years,
     )
 
 
@@ -125,6 +173,7 @@ def _rhs(t, y, p: EcoParams, pre):
     abborre = Y[:, CI["abborre"]]; gadda = Y[:, CI["gadda"]]
     flundra = Y[:, CI["flundra"]]; mort = Y[:, CI["mort"]]
     torsk = Y[:, CI["torsk"]]; lax = Y[:, CI["lax"]]
+    havsoring = Y[:, CI["havsoring"]]
     fagel = Y[:, CI["fagel"]]; sal_b = Y[:, CI["sal"]]
     O2 = Y[:, CI["O2"]]; O2b = Y[:, CI["O2b"]]; det = Y[:, CI["det"]]
     eps = 1e-9
@@ -231,9 +280,19 @@ def _rhs(t, y, p: EcoParams, pre):
     loss_skarp_l = cons_l * (0.6 * skarp) / prey_l
     loss_spigg_l = cons_l * (0.3 * spigg) / prey_l
 
-    # --- Säl äter fisk (inkl. lax) ---
+    # --- Havsöring (kustnära rovfisk) jagar spigg + kustnära sill/skarpsill ---
+    #     Till skillnad från laxen tar den mer spigg och mindre öppet-havs-skarpsill.
+    fho = S.FISH["havsoring"]
+    prey_ho = 0.6 * spigg + 0.5 * sill + 0.3 * skarp + eps
+    cons_ho = fho["cons"] * qt * pre["sr_havsoring"] * (prey_ho / (fho["khalf"] + prey_ho)) * havsoring
+    havsoring_growth = fho["eff"] * cons_ho
+    loss_spigg_ho = cons_ho * (0.6 * spigg) / prey_ho
+    loss_sill_ho = cons_ho * (0.5 * sill) / prey_ho
+    loss_skarp_ho = cons_ho * (0.3 * skarp) / prey_ho
+
+    # --- Säl äter fisk (inkl. lax och havsöring) ---
     fs = S.FISH["sal"]
-    prey_s = 0.6 * sill + 1.0 * torsk + 0.4 * skarp + 0.5 * lax + 0.3 * flundra + eps
+    prey_s = 0.6 * sill + 1.0 * torsk + 0.4 * skarp + 0.5 * lax + 0.3 * flundra + 0.3 * havsoring + eps
     cons_s = fs["cons"] * qt * (prey_s / (fs["khalf"] + prey_s)) * sal_b
     sal_growth = fs["eff"] * cons_s
     loss_sill_s = cons_s * (0.6 * sill) / prey_s
@@ -241,6 +300,7 @@ def _rhs(t, y, p: EcoParams, pre):
     loss_skarp_s = cons_s * (0.4 * skarp) / prey_s
     loss_lax_s = cons_s * (0.5 * lax) / prey_s
     loss_flundra_s = cons_s * (0.3 * flundra) / prey_s
+    loss_havsoring_s = cons_s * (0.3 * havsoring) / prey_s
 
     # --- Hypoxi: torsk lever nära botten → styrs av BOTTENsyret; djurplankton
     #     i den fria vattenmassan av ytsyret ---
@@ -258,6 +318,7 @@ def _rhs(t, y, p: EcoParams, pre):
     fish_mort = fsh.get("mort", 0.0) * mort
     fish_torsk = fsh.get("torsk", 0.0) * torsk
     fish_lax = fsh.get("lax", 0.0) * lax
+    fish_havsoring = fsh.get("havsoring", 0.0) * havsoring
 
     # --- Naturlig dödlighet + täthetsberoende bromsning (håller modellen stabil) ---
     m_sill = S.FISH["sill"]["mort"] * sill + 0.03 * sill ** 2
@@ -271,6 +332,7 @@ def _rhs(t, y, p: EcoParams, pre):
     m_mort = S.FISH["mort"]["mort"] * mort + 0.65 * mort ** 2
     m_torsk = S.FISH["torsk"]["mort"] * torsk + 0.03 * torsk ** 2 + HYP_MORT_TORSK * hyp_bottom * torsk
     m_lax = S.FISH["lax"]["mort"] * lax + 0.06 * lax ** 2
+    m_havsoring = S.FISH["havsoring"]["mort"] * havsoring + 0.06 * havsoring ** 2
     # Bottenfaunan dör på syrefria bottnar (styrs av BOTTENsyret) → döda bottnar
     m_bentos = S.BENTOS_MORT * bentos + S.BENTOS_BRAKE * bentos ** 2 + S.BENTOS_HYP * hyp_bottom * bentos
     m_fagel = S.FISH["fagel"]["mort"] * (1 + p.bird_hunt) * fagel + 0.08 * fagel ** 2
@@ -288,7 +350,7 @@ def _rhs(t, y, p: EcoParams, pre):
     # Kretsloppet: ALLT som dör (inkl. säl och fågel) + osmält föda → detritus/kadaver
     det_in = (S.M_PHYTO * P + S.M_CYANO * CY + m_zoo + m_bentos
               + m_sill + m_skarp + m_spigg + m_abborre + m_gadda + m_flundra
-              + m_mort + m_torsk + m_lax + m_fagel + m_sal
+              + m_mort + m_torsk + m_lax + m_havsoring + m_fagel + m_sal
               + (1 - S.ASSIM_ZOO) * graze
               + (1 - S.BENTOS_ASSIM) * filt
               + (1 - S.FISH["sill"]["eff"]) * cons_sill
@@ -300,6 +362,7 @@ def _rhs(t, y, p: EcoParams, pre):
               + (1 - fmo["eff"]) * cons_m
               + (1 - ft["eff"]) * cons_t
               + (1 - fl["eff"]) * cons_l
+              + (1 - fho["eff"]) * cons_ho
               + (1 - ff["eff"]) * cons_f)
 
     # Vertikal syresättning: nedbrytningen sker mest på botten och tär på
@@ -320,30 +383,44 @@ def _rhs(t, y, p: EcoParams, pre):
     d[:, CI["cyano"]] = gCY - grazeCY - S.M_CYANO * CY
     d[:, CI["zoo"]] = zoo_growth - zoo_pred - loss_zoo_a - loss_zoo_m - m_zoo
     d[:, CI["bentos"]] = bentos_growth - loss_bentos_t - loss_bentos_f - loss_bentos_fl - m_bentos
-    d[:, CI["sill"]] = S.FISH["sill"]["eff"] * cons_sill - loss_sill_t - loss_sill_s - loss_sill_g - loss_sill_f - loss_sill_l - m_sill - fish_sill
-    d[:, CI["skarpsill"]] = S.FISH["skarpsill"]["eff"] * cons_skarp - loss_skarp_t - loss_skarp_s - loss_skarp_a - loss_skarp_l - m_skarp - fish_skarp
-    d[:, CI["spigg"]] = S.FISH["spigg"]["eff"] * cons_spigg - loss_spigg_t - loss_spigg_a - loss_spigg_g - loss_spigg_f - loss_spigg_l - m_spigg - fish_spigg
+    d[:, CI["sill"]] = S.FISH["sill"]["eff"] * cons_sill - loss_sill_t - loss_sill_s - loss_sill_g - loss_sill_f - loss_sill_l - loss_sill_ho - m_sill - fish_sill
+    d[:, CI["skarpsill"]] = S.FISH["skarpsill"]["eff"] * cons_skarp - loss_skarp_t - loss_skarp_s - loss_skarp_a - loss_skarp_l - loss_skarp_ho - m_skarp - fish_skarp
+    d[:, CI["spigg"]] = S.FISH["spigg"]["eff"] * cons_spigg - loss_spigg_t - loss_spigg_a - loss_spigg_g - loss_spigg_f - loss_spigg_l - loss_spigg_ho - m_spigg - fish_spigg
     d[:, CI["abborre"]] = abborre_growth - loss_abborre_g - loss_abborre_f - m_abborre - fish_abborre
     d[:, CI["gadda"]] = gadda_growth - m_gadda - fish_gadda
     d[:, CI["flundra"]] = flundra_growth - loss_flundra_s - m_flundra - fish_flundra
     d[:, CI["mort"]] = mort_growth - loss_mort_g - loss_mort_f - m_mort - fish_mort
     d[:, CI["torsk"]] = torsk_growth - loss_torsk_s - m_torsk - fish_torsk
     d[:, CI["lax"]] = lax_growth - loss_lax_s - m_lax - fish_lax
+    d[:, CI["havsoring"]] = havsoring_growth - loss_havsoring_s - m_havsoring - fish_havsoring
     d[:, CI["fagel"]] = fagel_growth - m_fagel
     d[:, CI["sal"]] = sal_growth - m_sal
+    # Stora saltvatteninflöden (MBI): syrepuls på djupbottnarna vid händelseåren.
+    mbi = pre["mbi_years"]
+    if mbi is not None:
+        pulse = float(np.sum(np.exp(-((t - mbi) ** 2) / (2 * S.MBI_WIDTH ** 2))))
+        mbi_o2 = S.MBI_O2_PULSE * pulse * DEEP    # bara djupa bassänger
+    else:
+        mbi_o2 = 0.0
     d[:, CI["O2"]] = o2_prod + o2_reaer - S.SURF_LOSS * vent
-    d[:, CI["O2b"]] = vent - o2_demand
+    d[:, CI["O2b"]] = vent - o2_demand + mbi_o2
     d[:, CI["det"]] = det_in - decomp - filtD - loss_det_fl - loss_det_m - S.DET_BURIAL * det
 
     # --- Liten invandring: håller arter från att dö ut permanent (kan återhämtas) ---
     for c in ["phyto", "cyano", "zoo", "bentos", "sill", "skarpsill", "spigg",
-              "abborre", "gadda", "flundra", "mort", "torsk", "lax", "fagel", "sal"]:
+              "abborre", "gadda", "flundra", "mort", "torsk", "lax", "havsoring", "fagel", "sal"]:
         d[:, CI[c]] += S.IMMIG
 
     # --- Vattenutbyte mellan zoner (blandar löst näring + plankton) ---
     for c in MIXED:
         col = Y[:, c]
         d[:, c] += MIX.dot(col) - col * MIX_SUM
+
+    # --- Beståndsvandring: rörliga arter simmar från hög till låg täthet mellan
+    #     grannzoner (skalat per art). Samma massbevarande form som vattenutbytet. ---
+    for c, mob in MIGRATE.items():
+        col = Y[:, c]
+        d[:, c] += mob * (MIX.dot(col) - col * MIX_SUM)
 
     return d.reshape(-1)
 
@@ -356,7 +433,7 @@ TROPHIC = [
     ("Djurplankton & bottenfauna", ["zoo", "bentos"]),
     ("Plankton- & bottenätande fisk", ["sill", "skarpsill", "spigg", "flundra", "mort"]),
     ("Kustrovfisk (abborre/gädda)", ["abborre", "gadda"]),
-    ("Rovfisk (torsk/lax)", ["torsk", "lax"]),
+    ("Rovfisk (torsk/lax)", ["torsk", "lax", "havsoring"]),
     ("Toppredatorer (fågel/säl)", ["fagel", "sal"]),
     ("Detritus/kadaver → nedbrytning", ["det"]),
 ]
@@ -390,7 +467,7 @@ def _uttag_and_trofi(YZ, t, p):
         Y = YZ[:, :, mask].mean(axis=2)  # (zon, kompartment) årsmedel
         # Fiske (människa): borttag = fisketryck × biomassa
         fi = sum(f.get(a, 0.0) * zsum(Y, a)
-                 for a in ["sill", "skarpsill", "spigg", "abborre", "gadda", "torsk", "lax"])
+                 for a in ["sill", "skarpsill", "spigg", "abborre", "gadda", "torsk", "lax", "havsoring"])
         sill = Y[:, CI["sill"]]; skarp = Y[:, CI["skarpsill"]]; spigg = Y[:, CI["spigg"]]
         abborre = Y[:, CI["abborre"]]; torsk = Y[:, CI["torsk"]]; bentos = Y[:, CI["bentos"]]
         # Skarv/sjöfågel: predation på fisk + bottenfauna (Holling II)
@@ -433,6 +510,7 @@ def default_initial_state():
         Y[zi, CI["mort"]] = max(0.05, 2.0 * S.salinity_response("mort", s))
         Y[zi, CI["torsk"]] = max(0.05, 3.0 * S.salinity_response("torsk", s) * S.cod_reproduction_factor(s))
         Y[zi, CI["lax"]] = max(0.03, 1.0 * S.salinity_response("lax", s))
+        Y[zi, CI["havsoring"]] = max(0.03, 1.2 * S.salinity_response("havsoring", s))
         Y[zi, CI["fagel"]] = 0.4
         Y[zi, CI["sal"]] = 0.3
         Y[zi, CI["O2"]] = 90.0
@@ -521,7 +599,7 @@ if __name__ == "__main__":
     def summ(res, label):
         print(f"\n=== {label} (årsmedel sista året) ===")
         for c in ["phyto", "cyano", "zoo", "bentos", "sill", "skarpsill", "spigg",
-                  "flundra", "mort", "abborre", "gadda", "torsk", "lax", "fagel", "sal"]:
+                  "flundra", "mort", "abborre", "gadda", "torsk", "lax", "havsoring", "fagel", "sal"]:
             print(f"  {S.DISPLAY[c]:14s}: {tot_last_year(res, c):7.2f}")
         print("  Bottensyre per zon:")
         for z in res["zones"]:

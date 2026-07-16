@@ -109,6 +109,10 @@
         <label>Lax <span class="val" id="v-f-lax">0.15</span> <span class="help" data-k="f-lax"></span></label>
         <input type="range" id="f-lax" min="0" max="2" step="0.05" value="0.15">
       </div>
+      <div class="slider">
+        <label>Havsöring <span class="val" id="v-f-havsoring">0.12</span> <span class="help" data-k="f-havsoring"></span></label>
+        <input type="range" id="f-havsoring" min="0" max="2" step="0.05" value="0.12">
+      </div>
 
       <div class="slider">
         <label><span data-i18n="years">Antal år</span> <span class="val" id="v-years">30</span> <span class="help" data-k="years"></span></label>
@@ -288,6 +292,10 @@
       <p id="suggest-out" class="explain"></p>
       <h3 data-i18n="reports_added">Inlagda rapporter</h3>
       <div id="rep-list"></div>
+
+      <h3 data-i18n="gaps_title" style="margin-top:1.6rem">Kunskapsluckor &amp; var osäkerheten är störst</h3>
+      <p class="hint" data-i18n="gaps_hint">Här är de faktorer som modellen är känsligast för och där mer forskning skulle göra störst nytta — ungefär i fallande ordning.</p>
+      <ol id="gaps-list" class="gaps"></ol>
     </div>
   </section>
 

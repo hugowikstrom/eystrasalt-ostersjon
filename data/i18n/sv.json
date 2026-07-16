@@ -193,5 +193,15 @@
   "mode_politik_desc": "Beslutsunderlag: strategier, argument, investeringar och samhällsvärden. Ekonomin visas i både euro och lokal valuta.",
   "mode_forskare_desc": "Fördjupning: mekanismer och samband, osäkerheter och kunskapsluckor, samt nästa steg i forskningen.",
   "open_link": "Länk »",
-  "rep_link_ph": "Länk till dokumentet (valfritt, https://…)"
+  "rep_link_ph": "Länk till dokumentet (valfritt, https://…)",
+  "gaps_title": "Kunskapsluckor & var osäkerheten är störst",
+  "gaps_hint": "Här är de faktorer som modellen är känsligast för och där mer forskning skulle göra störst nytta — ungefär i fallande ordning.",
+  "gap_1": "**Intern fosforbelastning.** Hur mycket och hur snabbt syrefria bottnar läcker tillbaka fosfor styr hur länge övergödningen dröjer kvar även efter minskad tillförsel. Bland de allra största osäkerheterna för återhämtningstakten.",
+  "gap_2": "**Saltvatteninflöden (MBI).** Tidpunkt och storlek på de syresättande inflödena från Nordsjön är oregelbundna och svåra att förutsäga — de avgör torskens djupvattenhabitat men går inte att planera.",
+  "gap_3": "**Torskens rekrytering.** Exakt hur salt- och syrehalt i 'reproduktionsvolymen' styr lekframgången, och varför beståndet inte återhämtar sig trots fiskestopp (kondition, föda, syre).",
+  "gap_4": "**Cyanobakteriernas kvävefixering.** Hur starkt temperatur, skiktning och intern fosfor driver sommarblomningarna — och hur mycket kväve de tillför systemet.",
+  "gap_5": "**Spiggens roll i regimskiften.** Styrkan i storspiggens larvpredation på torsk-, abborr- och gäddyngel, och hur låst ett 'spigghav' egentligen är.",
+  "gap_6": "**Fiskvandring och utbredning.** Hur snabbt bestånd förflyttar sig mellan bassänger. Mobilitetstalen i modellen (inkl. laxens höga och havsöringens låga rörlighet) är rimliga men grova antaganden som skulle må bra av märknings-/akustikdata.",
+  "gap_7": "**Toppredatorernas uttag.** Hur mycket gråsäl och skarv faktiskt tar ur fiskbestånden och hur det samspelar med det kommersiella fisket.",
+  "gap_8": "**Klimatets utsötning.** Hur mycket och hur snabbt Östersjön sötas ut av ökad nederbörd/avrinning — vilket slår hårt mot torsken och gynnar kustrovfisk."
 }

@@ -30,6 +30,7 @@ const LAYERS = [
   { key: "abborre",label:"Abborre",       type: "cont", cmap: "bio" },
   { key: "gadda", label: "Gädda",         type: "cont", cmap: "bio" },
   { key: "lax",   label: "Lax",           type: "cont", cmap: "bio" },
+  { key: "havsoring", label: "Havsöring", type: "cont", cmap: "bio" },
   { key: "spigg", label: "Spigg",         type: "cont", cmap: "bio" },
   { key: "fagel", label: "Sjöfågel",      type: "cont", cmap: "bio" },
   { key: "temp",  label: "Temperatur",    type: "cont", cmap: "temp" },
@@ -47,21 +48,21 @@ const CMAPS = {
 const COL = {
   N:"#9fb3c8", phyto:"#4ade80", cyano:"#cbd44a", zoo:"#33c2c2", bentos:"#b08968",
   sill:"#4ea8ff", skarpsill:"#67e8f9", spigg:"#ffb454", abborre:"#a3e635",
-  gadda:"#4d7c0f", torsk:"#ff6b6b", lax:"#fb7185", fagel:"#e879f9", sal:"#c084fc",
+  gadda:"#4d7c0f", torsk:"#ff6b6b", lax:"#fb7185", havsoring:"#f472b6", fagel:"#e879f9", sal:"#c084fc",
   O2:"#7dd3fc", O2b:"#2563eb", det:"#8aa9c4",
 };
 // Färgpalett för uttag och trofinivåer
 const UCOL = { fiske:"#ff6b6b", sal:"#c084fc", skarv:"#e879f9", atervinning:"#4ade80" };
 const TROFI_COL = ["#9fb3c8","#4ade80","#33c2c2","#4ea8ff","#a3e635","#ff6b6b","#e879f9","#8aa9c4"];
 // Levande biomassa som visas i kartans tårtdiagram (uteslut näring/syre/detritus)
-const BIOMASS = ["phyto","cyano","zoo","bentos","sill","skarpsill","spigg","abborre","gadda","torsk","lax","fagel","sal"];
+const BIOMASS = ["phyto","cyano","zoo","bentos","sill","skarpsill","spigg","abborre","gadda","torsk","lax","havsoring","fagel","sal"];
 
 const PRESETS = {
   plankton: ["N","phyto","cyano","zoo"],
-  fisk: ["sill","skarpsill","spigg","mort","flundra","abborre","gadda","torsk","lax"],
+  fisk: ["sill","skarpsill","spigg","mort","flundra","abborre","gadda","torsk","lax","havsoring"],
   botten: ["bentos","flundra","O2b","det"],
   syre: ["O2","O2b"],
-  allt: ["N","phyto","cyano","zoo","bentos","sill","skarpsill","spigg","mort","flundra","abborre","gadda","torsk","lax","fagel","sal","O2","O2b"],
+  allt: ["N","phyto","cyano","zoo","bentos","sill","skarpsill","spigg","mort","flundra","abborre","gadda","torsk","lax","havsoring","fagel","sal","O2","O2b"],
 };
 
 const $ = (id) => document.getElementById(id);
@@ -231,6 +232,19 @@ function applyI18n() {
   document.querySelectorAll("[data-i18n-ph]").forEach(el => {
     const k = el.dataset.i18nPh; if (STR[k]) el.placeholder = STR[k];
   });
+  renderGaps();
+}
+
+// Kunskapsluckor: statisk lista (gap_1..gap_8) med inledande fetstil (**...**).
+function renderGaps() {
+  const el = $("gaps-list"); if (!el) return;
+  const bold = s => escHtml(s).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>");
+  let html = "";
+  for (let i = 1; i <= 8; i++) {
+    const k = "gap_" + i;
+    if (STR[k]) html += `<li>${bold(STR[k])}</li>`;
+  }
+  el.innerHTML = html;
 }
 
 // ---- Karta ----
@@ -763,6 +777,7 @@ function readParams() {
       sill: +$("f-sill").value, skarpsill: +$("f-skarpsill").value,
       spigg: +$("f-spigg").value, abborre: +$("f-abborre").value,
       gadda: +$("f-gadda").value, torsk: +$("f-torsk").value, lax: +$("f-lax").value,
+      havsoring: +$("f-havsoring").value,
     },
   };
 }
@@ -777,6 +792,7 @@ function setSliders(p) {
   if (p.fishing.abborre != null) $("f-abborre").value = p.fishing.abborre;
   if (p.fishing.gadda != null) $("f-gadda").value = p.fishing.gadda;
   if (p.fishing.lax != null) $("f-lax").value = p.fishing.lax;
+  if (p.fishing.havsoring != null) $("f-havsoring").value = p.fishing.havsoring;
   syncLabels();
 }
 function syncLabels() {
@@ -794,6 +810,7 @@ function syncLabels() {
   $("v-f-gadda").textContent = $("f-gadda").value;
   $("v-f-torsk").textContent = $("f-torsk").value;
   $("v-f-lax").textContent = $("f-lax").value;
+  $("v-f-havsoring").textContent = $("f-havsoring").value;
 }
 
 // Nollställ scenario-slidern till "— eget —" (när man skruvar reglagen själv).
@@ -919,7 +936,7 @@ function scenarioSettingsHtml(p) {
     [T("noise","Brus"), (+p.noise).toFixed(1)],
     [T("years","Antal år"), p.years],
   ].map(([k, v]) => `<b>${k}:</b> ${v}`).join(" · ");
-  const fish = ["sill","skarpsill","spigg","abborre","gadda","torsk","lax"]
+  const fish = ["sill","skarpsill","spigg","abborre","gadda","torsk","lax","havsoring"]
     .filter(k => f[k] != null)
     .map(k => `${disp[k] || k} ${(+f[k]).toFixed(2)}`).join(", ");
   return `<div class="ai-settings">⚙️ ${items}<br><b>${T("fishing_pressure","Fisketryck")}:</b> ${fish}</div>`;

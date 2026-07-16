@@ -29,6 +29,7 @@ COMPARTMENTS = [
     "mort",       # 11 mört/vitfisk (karpfisk, kustomnivor — ökar vid övergödning)
     "torsk",      # 12 torsk (rovfisk, öppet hav)
     "lax",        # 13 lax (pelagisk rovfisk, leker i älvar)
+    "havsoring",  # 14 havsöring (kustbunden rovfisk, leker i åar) — stationär
     "fagel",      # 12 sjöfågel (skarv, ejder m.fl.) — toppredator
     "sal",        # 13 gråsäl — toppredator
     "O2",         # 14 ytsyre
@@ -44,7 +45,7 @@ DISPLAY = {
     "zoo": "Djurplankton", "bentos": "Bottenfauna", "sill": "Sill",
     "skarpsill": "Skarpsill", "spigg": "Spigg", "abborre": "Abborre",
     "gadda": "Gädda", "flundra": "Flundra", "mort": "Mört/vitfisk",
-    "torsk": "Torsk", "lax": "Lax", "fagel": "Sjöfågel",
+    "torsk": "Torsk", "lax": "Lax", "havsoring": "Havsöring", "fagel": "Sjöfågel",
     "sal": "Säl", "O2": "Ytsyre", "O2b": "Bottensyre", "det": "Detritus/kadaver",
 }
 
@@ -59,7 +60,7 @@ UNIT = {
     "bentos": "g/m²",
     "sill": "g/m²", "skarpsill": "g/m²", "spigg": "g/m²",
     "abborre": "g/m²", "gadda": "g/m²", "flundra": "g/m²", "mort": "g/m²",
-    "torsk": "g/m²", "lax": "g/m²",
+    "torsk": "g/m²", "lax": "g/m²", "havsoring": "g/m²",
     "fagel": "g/m²", "sal": "g/m²",
     "O2": "% mättnad", "O2b": "% mättnad", "det": "g/m²",
 }
@@ -102,6 +103,15 @@ BENTOS_MORT = 0.75      # naturlig dödlighet
 BENTOS_BRAKE = 0.06     # täthetsberoende bromsning (håller bentos på rimlig nivå)
 BENTOS_HYP = 3.0        # extra dödlighet vid syrebrist (styrs av bottensyret)
 
+# --- Stora saltvatteninflöden (Major Baltic Inflows, MBI) --------------------
+# Oregelbundna inflöden av salt, syrerikt Nordsjövatten som tillfälligt ventilerar
+# djupvattnet i de djupa bassängerna (Egentliga Östersjön). De är sällsynta och
+# episodiska (t.ex. 1993, 2003, 2014). Lottas per körning ur väderbruset (noise_seed),
+# i snitt ~vart 10:e år. Källa: Mohrholz et al. 2015.
+MBI_INTERVAL = 10.0       # snittår mellan inflöden (Poisson)
+MBI_O2_PULSE = 22.0       # syrepåslag (% mättnad per år) på djupbottnar under en puls
+MBI_WIDTH = 0.6           # pulsens varaktighet (år, gaussisk bredd)
+
 # --- Fisk (planktonätare + rovfisk) och säl ----------------------------------
 # Varje art: max konsumtion, halvmättnad, effektivitet, naturlig dödlighet,
 # samt salthaltspreferens (optimum + bredd) som styr nord–syd-utbredningen.
@@ -139,6 +149,15 @@ FISH = {
     # (norr). Lågt bestånd, högt värde. Bred salthaltstolerans.
     "lax": dict(cons=5.0, khalf=7.0, eff=0.12, mort=0.30,
                 sal_opt=6.0, sal_width=9.0),
+    # Havsöring (Salmo trutta): skiljer sig starkt från laxen. KUSTBUNDEN och
+    # stationär — vandrar inte ut till öppna havet utan stannar i kustzonen nära
+    # hemåns mynning (låg MIGRATE i ecosystem.py). Äter kustnära byten: spigg,
+    # ung sill, storleksmässigt mindre än laxen. Bredare, sötare salthaltsnisch —
+    # finns längs HELA kusten från Bottenviken till sundet.
+    # Källor: Kallio-Nyberg et al. 2002 (vandringsmönster), Aarestrup et al. 2018
+    # (kustbeteende, telemetri), ICES WGBAST (bestånd), Havs- och vattenmyndigheten.
+    "havsoring": dict(cons=4.5, khalf=6.0, eff=0.12, mort=0.32,
+                      sal_opt=5.0, sal_width=8.0),
     # Sjöfågel (skarv, ejder, tärna m.fl.): äter kustfisk och bottenfauna.
     "fagel": dict(cons=2.4, khalf=6.0, eff=0.10, mort=0.22,
                   sal_opt=8.0, sal_width=20.0),  # finns längs hela kusten
@@ -162,8 +181,9 @@ DIET = {
     "mort":      {"zoo": 0.7, "det": 0.5, "phyto": 0.2},        # kustomnivor (karpfisk)
     "torsk":     {"sill": 0.9, "skarpsill": 1.0, "spigg": 0.6, "bentos": 0.4},
     "lax":       {"sill": 0.8, "skarpsill": 0.6, "spigg": 0.3},   # pelagisk jägare
+    "havsoring": {"spigg": 0.6, "sill": 0.5, "skarpsill": 0.3},   # kustnära jägare
     "fagel":     {"spigg": 0.7, "abborre": 0.5, "mort": 0.4, "sill": 0.4, "bentos": 0.6},
-    "sal":       {"sill": 0.6, "torsk": 1.0, "skarpsill": 0.4, "lax": 0.5, "flundra": 0.3},
+    "sal":       {"sill": 0.6, "torsk": 1.0, "skarpsill": 0.4, "lax": 0.5, "flundra": 0.3, "havsoring": 0.3},
     "det":       {},   # detritus/kadaver: slutstation som bryts ned till näring
 }
 
